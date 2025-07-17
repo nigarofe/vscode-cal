@@ -16,6 +16,14 @@
       {
         "command": "vscode-cal.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "vscode-cal.showQuestions",
+        "title": "Show Questions"
+      },
+      {
+        "command": "vscode-cal.showAllQuestionsJson",
+        "title": "Show All Questions JSON"
       }
     ]
   },
@@ -28,14 +36,18 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.102.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.102.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
-    "eslint": "^9.25.1",
-    "typescript": "^5.8.3",
     "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@types/sqlite3": "^3.1.11",
+    "sqlite3": "^5.1.7"
   }
 }
