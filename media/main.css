@@ -1,55 +1,56 @@
 body {
-	padding: 10px;
-	color: var(--vscode-editor-foreground);
-	background-color: var(--vscode-sideBar-background);
+  padding: 10px;
+  color: var(--vscode-editor-foreground);
+  background-color: var(--vscode-sideBar-background);
 }
 
 .container {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .input-container {
-	margin-bottom: 5px;
+  margin-bottom: 5px;
 }
 
 #question-number {
-	width: 100%;
-	padding: 5px;
-	border: 1px solid var(--vscode-input-border);
-	background-color: var(--vscode-input-background);
-	color: var(--vscode-input-foreground);
+  width: 100%;
+  padding: 5px;
+  border: 1px solid var(--vscode-input-border);
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  box-sizing: border-box;
 }
 
 .button-container {
-	display: flex;
-	flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 button {
-	padding: 8px;
-	border: none;
-	cursor: pointer;
-	text-align: center;
-	width: 100%;
-	color: var(--vscode-button-foreground);
+  padding: 8px;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  color: var(--vscode-button-foreground);
 }
 
 button.primary {
-	background-color: var(--vscode-button-background);
+  background-color: var(--vscode-button-background);
 }
 
 button.primary:hover {
-	background-color: var(--vscode-button-hoverBackground);
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 button.secondary-green {
-    background-color: #4CAF50;
-    color: white;
+  background-color: #4caf50;
+  color: white;
 }
 
 button.secondary-yellow {
-    background-color: #FFC107;
-    color: white;
+  background-color: #ffc107;
+  color: white;
 }
