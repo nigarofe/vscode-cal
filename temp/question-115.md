@@ -24,6 +24,7 @@ $$\sigma = E \varepsilon = \frac{F}{A} = \frac{10,5 \cdot 10^3}{1 \cdot 10^{-4}}
 ![[ps7#^equacoesDaDeformacao]]
 $$\varepsilon = \frac{\sigma}{E} = \frac{1,05 \cdot 10^8}{210 \cdot 10^9} = 5 \cdot 10^{-4}$$
 $$\varepsilon = \frac{L - L_0}{L_0} = \frac{\Delta L}{L_0} \;\to\; L = \varepsilon L_0 + L_0 = 5 \cdot 10^{-4} \cdot 1 + 1 = 1,0005\,m$$
+
 ## Answer
 1. $\sigma = 105\,\mathrm{MPa}$
 2. $\varepsilon = 5{,}0 \times 10^{-4}$

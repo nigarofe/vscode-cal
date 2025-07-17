@@ -13,7 +13,8 @@
   "activationEvents": [
     "onCommand:vscode-cal.exportQuestionsJson",
     "onCommand:vscode-cal.openQuestionByNumber",
-    "onCommand:vscode-cal.previewQuestion"
+    "onCommand:vscode-cal.previewQuestion",
+    "onView:cal-question-view"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -30,7 +31,25 @@
         "command": "vscode-cal.previewQuestion",
         "title": "Preview Question"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cal-view-container",
+          "title": "CAL",
+          "icon": "images/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "cal-view-container": [
+        {
+          "id": "cal-question-view",
+          "name": "Question Selector",
+          "type": "webview"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

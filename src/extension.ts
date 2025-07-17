@@ -2,11 +2,17 @@ import * as vscode from "vscode";
 import { registerCommands } from "./commands";
 import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
 import { saveQuestion } from "./db";
+import { SidepanelProvider } from "./sidepanelProvider";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "vscode-cal" is now active!');
 
   registerCommands(context);
+
+  const sidepanelProvider = new SidepanelProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(SidepanelProvider.viewType, sidepanelProvider)
+  );
 
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((doc) => updateDiagnostics(doc))

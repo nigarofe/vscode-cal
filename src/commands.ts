@@ -78,14 +78,20 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
   const openQuestionByNumberCommand = vscode.commands.registerCommand(
     "vscode-cal.openQuestionByNumber",
-    async () => {
-      const questionNumberStr = await vscode.window.showInputBox({
-        prompt: "Enter the question number",
-        placeHolder: "e.g., 1",
-        validateInput: (text) => {
-          return /^\d+$/.test(text) ? null : "Please enter a valid number.";
-        },
-      });
+    async (questionNumber?: number) => {
+      let questionNumberStr: string | undefined;
+
+      if (questionNumber === undefined) {
+        questionNumberStr = await vscode.window.showInputBox({
+          prompt: "Enter the question number",
+          placeHolder: "e.g., 1",
+          validateInput: (text) => {
+            return /^\d+$/.test(text) ? null : "Please enter a valid number.";
+          },
+        });
+      } else {
+        questionNumberStr = questionNumber.toString();
+      }
 
       if (questionNumberStr) {
         const questionNumber = parseInt(questionNumberStr, 10);

@@ -1,19 +1,18 @@
 ---
 discipline: "EDO"
+description: "C5 p.123"
 source: "Workbook for Dummies"
 tags: []
 ---
 
-# Question: 5
-
-## Description
-C1 Q14
+# Question 11
 
 ## Proposition
 
 
+## Step-by-step
+
+
 ## Answer
 
-
-## Step-by-step
 
