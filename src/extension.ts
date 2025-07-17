@@ -5,8 +5,8 @@ import * as fs from "fs";
 import matter from "gray-matter";
 import { GET_QUESTIONS_SQL, UPDATE_QUESTION_SQL } from "./db_sql_queries";
 import { Question } from "./Question";
-import markdownit = require("markdown-it");
-import * as katex from "@vscode/markdown-it-katex";
+import markdownit from "markdown-it";
+import katex from "@vscode/markdown-it-katex";
 
 const diagnosticsCollection = vscode.languages.createDiagnosticCollection("question");
 
@@ -110,15 +110,45 @@ async function saveQuestion(document: vscode.TextDocument) {
 }
 
 
-function getWebviewContent(text: string) {
+function getWebviewContent(
+  text: string,
+  panel: vscode.WebviewPanel,
+  context: vscode.ExtensionContext
+) {
   const md = new markdownit({
     html: true,
     linkify: true,
-    typographer: true,
-  }).use((katex as any).default);
+  }).use(katex);
 
   const { content } = matter(text);
   const html = md.render(content);
+
+  const katexCss = vscode.Uri.joinPath(
+    context.extensionUri,
+    "node_modules",
+    "katex",
+    "dist",
+    "katex.min.css"
+  );
+  const katexJs = vscode.Uri.joinPath(
+    context.extensionUri,
+    "node_modules",
+    "katex",
+    "dist",
+    "katex.min.js"
+  );
+  const autoRenderJs = vscode.Uri.joinPath(
+    context.extensionUri,
+    "node_modules",
+    "katex",
+    "dist",
+    "contrib",
+    "auto-render.min.js"
+  );
+
+  const katexCssUri = panel.webview.asWebviewUri(katexCss);
+  const katexJsUri = panel.webview.asWebviewUri(katexJs);
+  const autoRenderJsUri = panel.webview.asWebviewUri(autoRenderJs);
 
   return `
     <!DOCTYPE html>
@@ -127,7 +157,19 @@ function getWebviewContent(text: string) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Question Preview</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU07EhOZbCcBIhkuqb+Coa0G2rOZSPBYrJGZbNJ7UA4pingAIK21LDr" crossorigin="anonymous">
+        <link rel="stylesheet" href="${katexCssUri}">
+        <script defer src="${katexJsUri}"></script>
+        <script defer src="${autoRenderJsUri}"></script>
+        <script>
+          document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+              delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+              ]
+            });
+          });
+        </script>
     </head>
     <body>
         ${html}
@@ -311,7 +353,11 @@ ${question.step_by_step || ""}
         );
       }
 
-      panel.webview.html = getWebviewContent(editor.document.getText());
+      panel.webview.html = getWebviewContent(
+        editor.document.getText(),
+        panel,
+        context
+      );
     }
   );
   context.subscriptions.push(previewQuestionCommand);
@@ -322,7 +368,11 @@ ${question.step_by_step || ""}
         clearTimeout(debounce);
       }
       debounce = setTimeout(() => {
-        panel!.webview.html = getWebviewContent(event.document.getText());
+        panel!.webview.html = getWebviewContent(
+          event.document.getText(),
+          panel!,
+          context
+        );
       }, 300);
     }
   });
