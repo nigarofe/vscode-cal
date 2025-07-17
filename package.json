@@ -12,7 +12,8 @@
   ],
   "activationEvents": [
     "onCommand:vscode-cal.exportQuestionsJson",
-    "onCommand:vscode-cal.openQuestionByNumber"
+    "onCommand:vscode-cal.openQuestionByNumber",
+    "onCommand:vscode-cal.previewQuestion"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -24,6 +25,10 @@
       {
         "command": "vscode-cal.openQuestionByNumber",
         "title": "Open Question by Number"
+      },
+      {
+        "command": "vscode-cal.previewQuestion",
+        "title": "Preview Question"
       }
     ]
   },
@@ -47,8 +52,13 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@types/katex": "^0.16.7",
+    "@types/markdown-it": "^14.1.1",
     "@types/sqlite3": "^3.1.11",
     "gray-matter": "^4.0.3",
+    "katex": "^0.16.11",
+    "@vscode/markdown-it-katex": "^1.0.0",
+    "markdown-it": "^14.1.0",
     "sqlite3": "^5.1.7"
   }
 }

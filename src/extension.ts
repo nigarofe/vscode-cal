@@ -5,6 +5,8 @@ import * as fs from "fs";
 import matter from "gray-matter";
 import { GET_QUESTIONS_SQL, UPDATE_QUESTION_SQL } from "./db_sql_queries";
 import { Question } from "./Question";
+import markdownit = require("markdown-it");
+import * as katex from "@vscode/markdown-it-katex";
 
 const diagnosticsCollection = vscode.languages.createDiagnosticCollection("question");
 
@@ -107,6 +109,32 @@ async function saveQuestion(document: vscode.TextDocument) {
     db.close();
 }
 
+
+function getWebviewContent(text: string) {
+  const md = new markdownit({
+    html: true,
+    linkify: true,
+    typographer: true,
+  }).use((katex as any).default);
+
+  const { content } = matter(text);
+  const html = md.render(content);
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Question Preview</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU07EhOZbCcBIhkuqb+Coa0G2rOZSPBYrJGZbNJ7UA4pingAIK21LDr" crossorigin="anonymous">
+    </head>
+    <body>
+        ${html}
+    </body>
+    </html>
+  `;
+}
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "vscode-cal" is now active!');
@@ -249,6 +277,55 @@ ${question.step_by_step || ""}
   );
 
   context.subscriptions.push(openQuestionByNumberCommand);
+
+  let panel: vscode.WebviewPanel | undefined = undefined;
+  let debounce: NodeJS.Timeout | undefined = undefined;
+
+  const previewQuestionCommand = vscode.commands.registerCommand(
+    "vscode-cal.previewQuestion",
+    () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showInformationMessage("No active editor");
+        return;
+      }
+
+      if (panel) {
+        panel.reveal(vscode.ViewColumn.Two);
+      } else {
+        panel = vscode.window.createWebviewPanel(
+          "questionPreview",
+          "Question Preview",
+          vscode.ViewColumn.Two,
+          {
+            enableScripts: true,
+          }
+        );
+
+        panel.onDidDispose(
+          () => {
+            panel = undefined;
+          },
+          null,
+          context.subscriptions
+        );
+      }
+
+      panel.webview.html = getWebviewContent(editor.document.getText());
+    }
+  );
+  context.subscriptions.push(previewQuestionCommand);
+
+  vscode.workspace.onDidChangeTextDocument((event) => {
+    if (panel && event.document === vscode.window.activeTextEditor?.document) {
+      if (debounce) {
+        clearTimeout(debounce);
+      }
+      debounce = setTimeout(() => {
+        panel!.webview.html = getWebviewContent(event.document.getText());
+      }, 300);
+    }
+  });
 
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(doc => updateDiagnostics(doc))
