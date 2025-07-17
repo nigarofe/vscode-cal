@@ -148,7 +148,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(openQuestionByNumberCommand);
 
-  let panel: vscode.WebviewPanel | undefined = undefined;
+  let panels: vscode.WebviewPanel[] = [];
   let debounce: NodeJS.Timeout | undefined = undefined;
 
   const previewQuestionCommand = vscode.commands.registerCommand(
@@ -160,26 +160,26 @@ export function registerCommands(context: vscode.ExtensionContext) {
         return;
       }
 
-      if (panel) {
-        panel.reveal(vscode.ViewColumn.Two);
-      } else {
-        panel = vscode.window.createWebviewPanel(
-          "questionPreview",
-          "Question Preview",
-          vscode.ViewColumn.Two,
-          {
-            enableScripts: true,
-          }
-        );
+      const questionNumber = path.basename(editor.document.fileName).match(/question-(\d+)\.md/)?.[1];
+      const panel = vscode.window.createWebviewPanel(
+        "questionPreview",
+        `Preview Q${questionNumber || ' '}`,
+        vscode.ViewColumn.Two,
+        {
+          enableScripts: true,
+        }
+      );
 
-        panel.onDidDispose(
-          () => {
-            panel = undefined;
-          },
-          null,
-          context.subscriptions
-        );
-      }
+      panels.push(panel);
+
+      panel.onDidDispose(
+        () => {
+          panels = panels.filter(p => p !== panel);
+        },
+        null,
+        context.subscriptions
+      );
+
 
       panel.webview.html = getWebviewContent(
         editor.document.getText(),
@@ -191,16 +191,20 @@ export function registerCommands(context: vscode.ExtensionContext) {
   context.subscriptions.push(previewQuestionCommand);
 
   vscode.workspace.onDidChangeTextDocument((event) => {
-    if (panel && event.document === vscode.window.activeTextEditor?.document) {
+    if (panels.length > 0 && event.document === vscode.window.activeTextEditor?.document) {
       if (debounce) {
         clearTimeout(debounce);
       }
       debounce = setTimeout(() => {
-        panel!.webview.html = getWebviewContent(
-          event.document.getText(),
-          panel!,
-          context
-        );
+        panels.forEach(panel => {
+          if(panel.visible) {
+            panel.webview.html = getWebviewContent(
+              event.document.getText(),
+              panel!,
+              context
+            );
+          }
+        });
       }, 300);
     }
   });
