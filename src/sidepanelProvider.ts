@@ -66,9 +66,17 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 				<title>Question Selector</title>
 			</head>
 			<body>
-				<input type="text" id="question-number" placeholder="Enter question number" />
-                <button id="preview-button" class="primary">Preview Question</button>
-                <button id="save-button" class="primary">Save Question</button>
+				<div class="container">
+					<div class="input-container">
+						<input type="text" id="question-number" placeholder="Enter question number" />
+					</div>
+					<div class="button-container">
+						<button id="preview-button" class="primary">Preview Question</button>
+					</div>
+					<div class="button-container">
+						<button id="save-button" class="primary">Save Question</button>
+					</div>
+				</div>
 
 				<script nonce="${nonce}">
                     const vscode = acquireVsCodeApi();
