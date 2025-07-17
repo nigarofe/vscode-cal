@@ -157,12 +157,28 @@ export function registerCommands(context: vscode.ExtensionContext) {
       const questionNumberMatch = text.match(/^# Question (\d+)/im);
       const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
 
+      // In your previewQuestionCommand function
+      const roots = [
+        context.extensionUri,
+        // Use the spread operator to include all workspace folder URIs
+        ...(vscode.workspace.workspaceFolders || []).map(
+          (folder) => folder.uri
+        ),
+      ].filter(Boolean) as vscode.Uri[];
+
+      // 👇 Add this log to see the whitelisted paths
+      // console.log(
+      //   "✅ Allowed Webview Roots:",
+      //   roots.map((r) => r.fsPath)
+      // );
+
       const panel = vscode.window.createWebviewPanel(
         "questionPreview",
         `Preview Q${questionNumber}`,
         vscode.ViewColumn.Two,
         {
           enableScripts: true,
+          localResourceRoots: roots, // Use the 'roots' variable here
         }
       );
 
@@ -170,12 +186,11 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
       panel.onDidDispose(
         () => {
-          panels = panels.filter(p => p !== panel);
+          panels = panels.filter((p) => p !== panel);
         },
         null,
         context.subscriptions
       );
-
 
       panel.webview.html = getWebviewContent(
         editor.document.getText(),
@@ -210,19 +225,19 @@ export function registerCommands(context: vscode.ExtensionContext) {
   const registerAttemptWithoutHelpCommand = vscode.commands.registerCommand(
     "vscode-cal.registerAttemptWithoutHelp",
     () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showInformationMessage("No active editor.");
-            return;
-        }
-        const text = editor.document.getText();
-        const questionNumberMatch = text.match(/^# Question (\d+)/im);
-        if (!questionNumberMatch) {
-            vscode.window.showErrorMessage("Could not determine question number.");
-            return;
-        }
-        const questionNumber = parseInt(questionNumberMatch[1], 10);
-        registerAttempt(questionNumber, 1);
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showInformationMessage("No active editor.");
+        return;
+      }
+      const text = editor.document.getText();
+      const questionNumberMatch = text.match(/^# Question (\d+)/im);
+      if (!questionNumberMatch) {
+        vscode.window.showErrorMessage("Could not determine question number.");
+        return;
+      }
+      const questionNumber = parseInt(questionNumberMatch[1], 10);
+      registerAttempt(questionNumber, 1);
     }
   );
   context.subscriptions.push(registerAttemptWithoutHelpCommand);
@@ -230,31 +245,34 @@ export function registerCommands(context: vscode.ExtensionContext) {
   const registerAttemptWithHelpCommand = vscode.commands.registerCommand(
     "vscode-cal.registerAttemptWithHelp",
     () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showInformationMessage("No active editor.");
-            return;
-        }
-        const text = editor.document.getText();
-        const questionNumberMatch = text.match(/^# Question (\d+)/im);
-        if (!questionNumberMatch) {
-            vscode.window.showErrorMessage("Could not determine question number.");
-            return;
-        }
-        const questionNumber = parseInt(questionNumberMatch[1], 10);
-        registerAttempt(questionNumber, 0);
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showInformationMessage("No active editor.");
+        return;
+      }
+      const text = editor.document.getText();
+      const questionNumberMatch = text.match(/^# Question (\d+)/im);
+      if (!questionNumberMatch) {
+        vscode.window.showErrorMessage("Could not determine question number.");
+        return;
+      }
+      const questionNumber = parseInt(questionNumberMatch[1], 10);
+      registerAttempt(questionNumber, 0);
     }
   );
   context.subscriptions.push(registerAttemptWithHelpCommand);
 
   vscode.workspace.onDidChangeTextDocument((event) => {
-    if (panels.length > 0 && event.document === vscode.window.activeTextEditor?.document) {
+    if (
+      panels.length > 0 &&
+      event.document === vscode.window.activeTextEditor?.document
+    ) {
       if (debounce) {
         clearTimeout(debounce);
       }
       debounce = setTimeout(() => {
-        panels.forEach(panel => {
-          if(panel.visible) {
+        panels.forEach((panel) => {
+          if (panel.visible) {
             panel.webview.html = getWebviewContent(
               event.document.getText(),
               panel!,
