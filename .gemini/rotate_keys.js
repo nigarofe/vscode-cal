@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const API_KEYS_FILE = path.join(__dirname, 'api_keys.json');
-const ENV_FILE = path.join(__dirname, '..', '.env');
+const ENV_FILE = path.join(__dirname, '.env');
 const KEY_NAME = 'GEMINI_API_KEY';
 
 let keys = [];
