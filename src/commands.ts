@@ -108,20 +108,20 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
             const frontMatter = {
               discipline: question.discipline,
+              description: question.description,
               source: question.source,
               tags: question.tags,
             };
 
             const content =
-              `---` +
+              `---\n` +
               `${Object.entries(frontMatter)
                 .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-                .join("\n")}` +
+                .join("\n")}\n` +
               `---\n\n` +
               `# Question ${question.question_number}\n\n` +
-              `## Description\n${question.description}\n\n` +
               `## Proposition\n${question.proposition}\n\n` +
-              `## Step-by-step\n${question.step_by_step || ""}\n` +
+              `## Step-by-step\n${question.step_by_step || ""}\n\n` +
               `## Answer\n${question.answer}\n\n`;
 
             fs.writeFileSync(tempFile, content);

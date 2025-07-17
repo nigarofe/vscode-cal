@@ -46,7 +46,12 @@ export function updateDiagnostics(document: vscode.TextDocument) {
     }
 
     // Body validation
-    const requiredHeadings = ["## Description", "## Proposition", "## Answer"];
+    const requiredHeadings = [
+      "# Question",
+      "## Proposition",
+      "## Step-by-step",
+      "## Answer",
+    ];
     for (const heading of requiredHeadings) {
       if (!text.includes(heading)) {
         diagnostics.push(
