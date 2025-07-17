@@ -1,8 +1,12 @@
 import * as vscode from "vscode";
 import * as sqlite3 from "sqlite3";
 import * as path from "path";
-import { GET_QUESTIONS_SQL } from "./db_sql_queries";
+import * as fs from "fs";
+import matter from "gray-matter";
+import { GET_QUESTIONS_SQL, UPDATE_QUESTION_SQL } from "./db_sql_queries";
 import { Question } from "./Question";
+
+const diagnosticsCollection = vscode.languages.createDiagnosticCollection("question");
 
 async function buildAllQuestions(dbPath: string): Promise<Question[]> {
   return new Promise((resolve, reject) => {
@@ -24,12 +28,88 @@ async function buildAllQuestions(dbPath: string): Promise<Question[]> {
   });
 }
 
+function updateDiagnostics(document: vscode.TextDocument) {
+  if (!path.basename(document.fileName).startsWith("question-")) {
+    return;
+  }
+
+  const diagnostics: vscode.Diagnostic[] = [];
+  const text = document.getText();
+
+  try {
+    const parsed = matter(text);
+
+    // Front matter validation
+    if (!parsed.data.discipline) {
+      diagnostics.push(new vscode.Diagnostic(new vscode.Range(0, 0, 0, 1), "Front matter is missing the 'discipline' field.", vscode.DiagnosticSeverity.Error));
+    }
+    if (!parsed.data.source) {
+      diagnostics.push(new vscode.Diagnostic(new vscode.Range(0, 0, 0, 1), "Front matter is missing the 'source' field.", vscode.DiagnosticSeverity.Error));
+    }
+    if (!parsed.data.tags || !Array.isArray(parsed.data.tags)) {
+      diagnostics.push(new vscode.Diagnostic(new vscode.Range(0, 0, 0, 1), "Front matter must have 'tags' as an array.", vscode.DiagnosticSeverity.Error));
+    }
+
+    // Body validation
+    const requiredHeadings = ["## Description", "## Proposition", "## Answer"];
+    for (const heading of requiredHeadings) {
+      if (!text.includes(heading)) {
+        diagnostics.push(new vscode.Diagnostic(new vscode.Range(0, 0, document.lineCount - 1, 1), `Markdown body is missing the '${heading}' heading.`, vscode.DiagnosticSeverity.Error));
+      }
+    }
+  } catch (e: any) {
+    diagnostics.push(new vscode.Diagnostic(new vscode.Range(0, 0, 0, 1), `Error parsing front matter: ${e.message}`, vscode.DiagnosticSeverity.Error));
+  }
+
+  diagnosticsCollection.set(document.uri, diagnostics);
+}
+
+async function saveQuestion(document: vscode.TextDocument) {
+    if (!path.basename(document.fileName).startsWith("question-")) {
+        return;
+    }
+
+    updateDiagnostics(document);
+    if (diagnosticsCollection.get(document.uri)?.length) {
+        vscode.window.showErrorMessage("Cannot save, please fix the errors first.");
+        return;
+    }
+
+    const text = document.getText();
+    const parsed = matter(text);
+    const questionNumber = parseInt(path.basename(document.fileName).split("-")[1].split(".")[0], 10);
+
+    const content = parsed.content;
+    const description = content.split("## Description")[1].split("## Proposition")[0].trim();
+    const proposition = content.split("## Proposition")[1].split("## Answer")[0].trim();
+    const answer = content.split("## Answer")[1].split("## Step-by-step")[0].trim();
+    const stepByStep = content.includes("## Step-by-step") ? content.split("## Step-by-step")[1].trim() : null;
+
+    const dbPath = path.join(vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath, "src", "db.db");
+    const db = new sqlite3.Database(dbPath);
+
+    db.run(UPDATE_QUESTION_SQL, [
+        parsed.data.discipline,
+        parsed.data.source,
+        description,
+        proposition,
+        stepByStep,
+        answer,
+        parsed.data.tags.join(", "),
+        questionNumber
+    ], function (err) {
+        if (err) {
+            vscode.window.showErrorMessage(`Error updating question: ${err.message}`);
+        } else {
+            vscode.window.showInformationMessage(`Question ${questionNumber} updated successfully.`);
+        }
+    });
+    db.close();
+}
+
+
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "vscode-cal" is now active!');
-
-  
-
-  
 
   const exportQuestionsJsonCommand = vscode.commands.registerCommand(
     "vscode-cal.exportQuestionsJson",
@@ -99,8 +179,85 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  context.subscriptions.push(exportQuestionsJsonCommand);
+
+  const openQuestionByNumberCommand = vscode.commands.registerCommand(
+    "vscode-cal.openQuestionByNumber",
+    async () => {
+      const questionNumberStr = await vscode.window.showInputBox({
+        prompt: "Enter the question number",
+        placeHolder: "e.g., 1",
+        validateInput: (text) => {
+          return /^\d+$/.test(text) ? null : "Please enter a valid number.";
+        },
+      });
+
+      if (questionNumberStr) {
+        const questionNumber = parseInt(questionNumberStr, 10);
+        const dbPath = path.join(context.extensionPath, "src", "db.db");
+        try {
+          const questions = await buildAllQuestions(dbPath);
+          const question = questions.find(
+            (q) => q.question_number === questionNumber
+          );
+
+          if (question) {
+            const tempDir = path.join(context.extensionPath, "temp");
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir);
+            }
+            const tempFile = path.join(tempDir, `question-${question.question_number}.md`);
+
+            const frontMatter = {
+                discipline: question.discipline,
+                source: question.source,
+                tags: question.tags
+            };
+
+            const content = `---
+${Object.entries(frontMatter).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join("\n")}
+---
+
+# Question: ${question.question_number}
+
+## Description
+${question.description}
+
+## Proposition
+${question.proposition}
+
+## Answer
+${question.answer}
+
+## Step-by-step
+${question.step_by_step || ""}
+`;
+            fs.writeFileSync(tempFile, content);
+            const doc = await vscode.workspace.openTextDocument(tempFile);
+            await vscode.window.showTextDocument(doc);
+            updateDiagnostics(doc);
+          } else {
+            vscode.window.showErrorMessage(
+              `Question number ${questionNumber} not found.`
+            );
+          }
+        } catch (error: any) {
+          vscode.window.showErrorMessage(error.message);
+        }
+      }
+    }
+  );
+
+  context.subscriptions.push(openQuestionByNumberCommand);
+
   context.subscriptions.push(
-    exportQuestionsJsonCommand
+    vscode.workspace.onDidOpenTextDocument(doc => updateDiagnostics(doc))
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(e => updateDiagnostics(e.document))
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument(doc => saveQuestion(doc))
   );
 }
 
