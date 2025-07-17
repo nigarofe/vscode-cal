@@ -9,16 +9,20 @@ export function activate(context: vscode.ExtensionContext) {
   registerCommands(context);
 
   context.subscriptions.push(
-    vscode.workspace.onDidOpenTextDocument(doc => updateDiagnostics(doc))
+    vscode.workspace.onDidOpenTextDocument((doc) => updateDiagnostics(doc))
   );
   context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument(e => updateDiagnostics(e.document))
+    vscode.workspace.onDidChangeTextDocument((e) =>
+      updateDiagnostics(e.document)
+    )
   );
   context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(doc => {
+    vscode.workspace.onDidSaveTextDocument((doc) => {
       updateDiagnostics(doc);
       if (diagnosticsCollection.get(doc.uri)?.length) {
-        vscode.window.showErrorMessage("Cannot save, please fix the errors first.");
+        vscode.window.showErrorMessage(
+          "Cannot save, please fix the errors first."
+        );
         return;
       }
       saveQuestion(doc);
