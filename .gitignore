@@ -5,4 +5,5 @@ node_modules
 *.vsix
 
 .gemini/.env
+.gemini/api_keys.json
 CAL3

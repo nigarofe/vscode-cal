@@ -1,71 +1,62 @@
-# vscode-cal README
+# Gemini API Key Rotation
 
-This is the README for your extension "vscode-cal". After writing up a brief description, we recommend including the following sections.
+This script allows you to rotate through multiple Gemini API keys to manage your daily quotas.
 
-## Features
+## Setup
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+1.  **Add your API keys:** Open the `api_keys.json` file and replace the placeholder keys with your actual Gemini API keys.
 
-For example if there is an image subfolder under your extension project workspace:
+    ```json
+    {
+      "keys": [
+        "YOUR_API_KEY_1",
+        "YOUR_API_KEY_2",
+        "YOUR_API_KEY_3"
+      ]
+    }
+    ```
 
-\!\[feature X\]\(images/feature-x.png\)
+## Usage
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+The `rotate_keys.js` script exports a `getNextKey()` function that returns the next available API key in a sequential order.
 
-## Requirements
+To use it in your project, you can import it like this:
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+```javascript
+const { getNextKey } = require('./rotate_keys');
 
-## Extension Settings
+const apiKey = getNextKey();
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+if (apiKey) {
+  // Use the apiKey in your Gemini API calls
+  console.log('Using API Key:', apiKey);
+} else {
+  console.error('No API keys found.');
+}
+```
 
-For example:
+## Example
 
-This extension contributes the following settings:
+Here's a simple example of how you might use it in a script that makes multiple API calls:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+```javascript
+const { getNextKey } = require('./rotate_keys');
 
-## Known Issues
+function makeApiCall() {
+  const apiKey = getNextKey();
+  if (apiKey) {
+    console.log(`Making API call with key: ${apiKey}`);
+    // Your API call logic here
+  } else {
+    console.error('Could not make API call. No API keys available.');
+  }
+}
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+// Make multiple API calls
+makeApiCall();
+makeApiCall();
+makeApiCall();
+makeApiCall(); // This will loop back to the first key
+```
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+To run this example, you could save it as a file (e.g., `example.js`) and run `node example.js` in your terminal.
