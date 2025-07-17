@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import matter from "gray-matter";
-import { buildAllQuestions, saveQuestion } from "./db";
+import { buildAllQuestions, saveQuestion, registerAttempt } from "./db";
 import { getWebviewContent } from "./webview";
 import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
 
@@ -206,6 +206,46 @@ export function registerCommands(context: vscode.ExtensionContext) {
     }
   );
   context.subscriptions.push(saveQuestionCommand);
+
+  const registerAttemptWithoutHelpCommand = vscode.commands.registerCommand(
+    "vscode-cal.registerAttemptWithoutHelp",
+    () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showInformationMessage("No active editor.");
+            return;
+        }
+        const text = editor.document.getText();
+        const questionNumberMatch = text.match(/^# Question (\d+)/im);
+        if (!questionNumberMatch) {
+            vscode.window.showErrorMessage("Could not determine question number.");
+            return;
+        }
+        const questionNumber = parseInt(questionNumberMatch[1], 10);
+        registerAttempt(questionNumber, 1);
+    }
+  );
+  context.subscriptions.push(registerAttemptWithoutHelpCommand);
+
+  const registerAttemptWithHelpCommand = vscode.commands.registerCommand(
+    "vscode-cal.registerAttemptWithHelp",
+    () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showInformationMessage("No active editor.");
+            return;
+        }
+        const text = editor.document.getText();
+        const questionNumberMatch = text.match(/^# Question (\d+)/im);
+        if (!questionNumberMatch) {
+            vscode.window.showErrorMessage("Could not determine question number.");
+            return;
+        }
+        const questionNumber = parseInt(questionNumberMatch[1], 10);
+        registerAttempt(questionNumber, 0);
+    }
+  );
+  context.subscriptions.push(registerAttemptWithHelpCommand);
 
   vscode.workspace.onDidChangeTextDocument((event) => {
     if (panels.length > 0 && event.document === vscode.window.activeTextEditor?.document) {

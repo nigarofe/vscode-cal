@@ -39,6 +39,14 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
                     vscode.commands.executeCommand('vscode-cal.saveQuestion');
                     break;
                 }
+                case 'registerAttemptWithoutHelp': {
+                    vscode.commands.executeCommand('vscode-cal.registerAttemptWithoutHelp');
+                    break;
+                }
+                case 'registerAttemptWithHelp': {
+                    vscode.commands.executeCommand('vscode-cal.registerAttemptWithHelp');
+                    break;
+                }
             }
         });
     }
@@ -76,6 +84,12 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 					<div class="button-container">
 						<button id="save-button" class="primary">Save Question</button>
 					</div>
+                    <div class="button-container">
+                        <button id="register-attempt-without-help-button" class="secondary-green">Register attempt without help</button>
+                    </div>
+                    <div class="button-container">
+                        <button id="register-attempt-with-help-button" class="secondary-yellow">Register attempt with help</button>
+                    </div>
 				</div>
 
 				<script nonce="${nonce}">
@@ -83,6 +97,8 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
                     const input = document.getElementById('question-number');
                     const previewButton = document.getElementById('preview-button');
                     const saveButton = document.getElementById('save-button');
+                    const registerAttemptWithoutHelpButton = document.getElementById('register-attempt-without-help-button');
+                    const registerAttemptWithHelpButton = document.getElementById('register-attempt-with-help-button');
                     
                     let timeout;
                     input.addEventListener('keyup', () => {
@@ -101,6 +117,14 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 
                     saveButton.addEventListener('click', () => {
                         vscode.postMessage({ type: 'saveQuestion' });
+                    });
+
+                    registerAttemptWithoutHelpButton.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'registerAttemptWithoutHelp' });
+                    });
+
+                    registerAttemptWithHelpButton.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'registerAttemptWithHelp' });
                     });
 				</script>
 			</body>

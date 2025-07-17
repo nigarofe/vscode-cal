@@ -30,6 +30,14 @@
       {
         "command": "vscode-cal.previewQuestion",
         "title": "Preview Question"
+      },
+      {
+        "command": "vscode-cal.registerAttemptWithoutHelp",
+        "title": "Register Attempt Without Help"
+      },
+      {
+        "command": "vscode-cal.registerAttemptWithHelp",
+        "title": "Register Attempt With Help"
       }
     ],
     "viewsContainers": {
