@@ -49,33 +49,57 @@ export async function buildAllQuestions(dbPath: string): Promise<Question[]> {
 }
 
 export async function saveQuestion(document: vscode.TextDocument) {
-  if (!path.basename(document.fileName).startsWith("question-")) {
+  const text = document.getText();
+  const questionNumberMatch = text.match(/^# Question (\d+)/im);
+
+  if (!questionNumberMatch) {
+    vscode.window.showErrorMessage(
+      "Could not save: Question number not found in the document."
+    );
+    return;
+  }
+  const questionNumber = parseInt(questionNumberMatch[1], 10);
+
+  const parsed = matter(text);
+  const content = parsed.content;
+
+  const description = parsed.data.description;
+
+  let proposition = "";
+  let stepByStep = null;
+  let answer = "";
+
+  const propositionContent = content.split("## Proposition")[1];
+  if (propositionContent === undefined) {
+    vscode.window.showErrorMessage(
+      "Could not save: '## Proposition' section not found."
+    );
     return;
   }
 
-  const text = document.getText();
-  const parsed = matter(text);
-  const questionNumber = parseInt(
-    path.basename(document.fileName).split("-")[1].split(".")[0],
-    10
-  );
-
-  const content = parsed.content;
-  const description = content
-    .split("## Description")[1]
-    .split("## Proposition")[0]
-    .trim();
-  const proposition = content
-    .split("## Proposition")[1]
-    .split("## Answer")[0]
-    .trim();
-  const answer = content
-    .split("## Answer")[1]
-    .split("## Step-by-step")[0]
-    .trim();
-  const stepByStep = content.includes("## Step-by-step")
-    ? content.split("## Step-by-step")[1].trim()
-    : null;
+  if (propositionContent.includes("## Step-by-step")) {
+    const stepByStepSplit = propositionContent.split("## Step-by-step");
+    proposition = stepByStepSplit[0].trim();
+    const answerSplit = stepByStepSplit[1].split("## Answer");
+    if (answerSplit[1] === undefined) {
+      vscode.window.showErrorMessage(
+        "Could not save: '## Answer' section not found after '## Step-by-step'."
+      );
+      return;
+    }
+    stepByStep = answerSplit[0].trim();
+    answer = answerSplit[1].trim();
+  } else {
+    const answerSplit = propositionContent.split("## Answer");
+    if (answerSplit[1] === undefined) {
+      vscode.window.showErrorMessage(
+        "Could not save: '## Answer' section not found."
+      );
+      return;
+    }
+    proposition = answerSplit[0].trim();
+    answer = answerSplit[1].trim();
+  }
 
   const dbPath = path.join(
     vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,

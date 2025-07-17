@@ -22,18 +22,6 @@ export function activate(context: vscode.ExtensionContext) {
       updateDiagnostics(e.document)
     )
   );
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument((doc) => {
-      updateDiagnostics(doc);
-      if (diagnosticsCollection.get(doc.uri)?.length) {
-        vscode.window.showErrorMessage(
-          "Cannot save, please fix the errors first."
-        );
-        return;
-      }
-      saveQuestion(doc);
-    })
-  );
 }
 
 export function deactivate() {}

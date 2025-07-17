@@ -6,12 +6,18 @@ export const diagnosticsCollection =
   vscode.languages.createDiagnosticCollection("question");
 
 export function updateDiagnostics(document: vscode.TextDocument) {
-  if (!path.basename(document.fileName).startsWith("question-")) {
+  const diagnostics: vscode.Diagnostic[] = [];
+  const text = document.getText();
+
+  const questionNumberMatch = text.match(/^# Question (\d+)/im);
+
+  // If it's not a question file, clear diagnostics and return.
+  if (!questionNumberMatch) {
+    diagnosticsCollection.set(document.uri, []);
     return;
   }
 
-  const diagnostics: vscode.Diagnostic[] = [];
-  const text = document.getText();
+  const questionNumber = questionNumberMatch[1];
 
   try {
     const parsed = matter(text);
@@ -46,14 +52,6 @@ export function updateDiagnostics(document: vscode.TextDocument) {
     }
 
     // Body validation
-    const questionNumberMatch = path
-      .basename(document.fileName)
-      .match(/question-(\d+)\.md/);
-    if (!questionNumberMatch) {
-      return;
-    }
-    const questionNumber = questionNumberMatch[1];
-
     const requiredHeadings = [
       "# Question",
       "## Proposition",

@@ -35,6 +35,10 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
                     vscode.commands.executeCommand('vscode-cal.previewQuestion');
                     break;
                 }
+                case 'saveQuestion': {
+                    vscode.commands.executeCommand('vscode-cal.saveQuestion');
+                    break;
+                }
             }
         });
     }
@@ -64,11 +68,13 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 			<body>
 				<input type="text" id="question-number" placeholder="Enter question number" />
                 <button id="preview-button" class="primary">Preview Question</button>
+                <button id="save-button" class="primary">Save Question</button>
 
 				<script nonce="${nonce}">
                     const vscode = acquireVsCodeApi();
                     const input = document.getElementById('question-number');
                     const previewButton = document.getElementById('preview-button');
+                    const saveButton = document.getElementById('save-button');
                     
                     let timeout;
                     input.addEventListener('keyup', () => {
@@ -83,6 +89,10 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 
                     previewButton.addEventListener('click', () => {
                         vscode.postMessage({ type: 'previewQuestion' });
+                    });
+
+                    saveButton.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'saveQuestion' });
                     });
 				</script>
 			</body>

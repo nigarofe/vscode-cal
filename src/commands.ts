@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import matter from "gray-matter";
-import { buildAllQuestions } from "./db";
+import { buildAllQuestions, saveQuestion } from "./db";
 import { getWebviewContent } from "./webview";
-import { updateDiagnostics } from "./diagnostics";
+import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
 
 export function registerCommands(context: vscode.ExtensionContext) {
   const exportQuestionsJsonCommand = vscode.commands.registerCommand(
@@ -103,15 +103,6 @@ export function registerCommands(context: vscode.ExtensionContext) {
           );
 
           if (question) {
-            const tempDir = path.join(context.extensionPath, "temp");
-            if (!fs.existsSync(tempDir)) {
-              fs.mkdirSync(tempDir);
-            }
-            const tempFile = path.join(
-              tempDir,
-              `question-${question.question_number}.md`
-            );
-
             const frontMatter = {
               discipline: question.discipline,
               description: question.description,
@@ -130,8 +121,10 @@ export function registerCommands(context: vscode.ExtensionContext) {
               `## Step-by-step\n${question.step_by_step || ""}\n\n` +
               `## Answer\n${question.answer}\n\n`;
 
-            fs.writeFileSync(tempFile, content);
-            const doc = await vscode.workspace.openTextDocument(tempFile);
+            const doc = await vscode.workspace.openTextDocument({
+              content: content,
+              language: "markdown",
+            });
             await vscode.window.showTextDocument(doc);
             updateDiagnostics(doc);
           } else {
@@ -160,10 +153,13 @@ export function registerCommands(context: vscode.ExtensionContext) {
         return;
       }
 
-      const questionNumber = path.basename(editor.document.fileName).match(/question-(\d+)\.md/)?.[1];
+      const text = editor.document.getText();
+      const questionNumberMatch = text.match(/^# Question (\d+)/im);
+      const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
+
       const panel = vscode.window.createWebviewPanel(
         "questionPreview",
-        `Preview Q${questionNumber || ' '}`,
+        `Preview Q${questionNumber}`,
         vscode.ViewColumn.Two,
         {
           enableScripts: true,
@@ -189,6 +185,27 @@ export function registerCommands(context: vscode.ExtensionContext) {
     }
   );
   context.subscriptions.push(previewQuestionCommand);
+
+  const saveQuestionCommand = vscode.commands.registerCommand(
+    "vscode-cal.saveQuestion",
+    () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showInformationMessage("No active editor to save.");
+        return;
+      }
+      const doc = editor.document;
+      updateDiagnostics(doc);
+      if (diagnosticsCollection.get(doc.uri)?.length) {
+        vscode.window.showErrorMessage(
+          "Cannot save, please fix the errors first."
+        );
+        return;
+      }
+      saveQuestion(doc);
+    }
+  );
+  context.subscriptions.push(saveQuestionCommand);
 
   vscode.workspace.onDidChangeTextDocument((event) => {
     if (panels.length > 0 && event.document === vscode.window.activeTextEditor?.document) {
