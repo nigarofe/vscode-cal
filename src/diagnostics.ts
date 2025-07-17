@@ -46,6 +46,14 @@ export function updateDiagnostics(document: vscode.TextDocument) {
     }
 
     // Body validation
+    const questionNumberMatch = path
+      .basename(document.fileName)
+      .match(/question-(\d+)\.md/);
+    if (!questionNumberMatch) {
+      return;
+    }
+    const questionNumber = questionNumberMatch[1];
+
     const requiredHeadings = [
       "# Question",
       "## Proposition",
@@ -53,14 +61,29 @@ export function updateDiagnostics(document: vscode.TextDocument) {
       "## Answer",
     ];
     for (const heading of requiredHeadings) {
-      if (!text.includes(heading)) {
-        diagnostics.push(
-          new vscode.Diagnostic(
-            new vscode.Range(0, 0, document.lineCount - 1, 1),
-            `Markdown body is missing the '${heading}' heading.`,
-            vscode.DiagnosticSeverity.Error
-          )
-        );
+      if (heading === "# Question") {
+        const headingRegex = new RegExp(`^# Question ${questionNumber}`, "im");
+
+        if (!headingRegex.test(text)) {
+          diagnostics.push(
+            new vscode.Diagnostic(
+              new vscode.Range(0, 0, document.lineCount - 1, 1),
+              `Markdown body is missing the '# Question ${questionNumber}' heading.`,
+              vscode.DiagnosticSeverity.Error
+            )
+          );
+        }
+      } else {
+        const headingRegex = new RegExp(`^${heading}(\s|$)`, "im");
+        if (!headingRegex.test(text)) {
+          diagnostics.push(
+            new vscode.Diagnostic(
+              new vscode.Range(0, 0, document.lineCount - 1, 1),
+              `Markdown body is missing the '${heading}' heading.`,
+              vscode.DiagnosticSeverity.Error
+            )
+          );
+        }
       }
     }
   } catch (e: any) {
