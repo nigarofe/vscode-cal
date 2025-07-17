@@ -9,21 +9,15 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:vscode-cal.exportQuestionsJson"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vscode-cal.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "vscode-cal.showQuestions",
-        "title": "Show Questions"
-      },
-      {
-        "command": "vscode-cal.showAllQuestionsJson",
-        "title": "Show All Questions JSON"
+        "command": "vscode-cal.exportQuestionsJson",
+        "title": "Export Questions as JSON"
       }
     ]
   },
