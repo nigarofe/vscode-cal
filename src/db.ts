@@ -66,7 +66,7 @@ export async function saveQuestion(document: vscode.TextDocument) {
   const description = parsed.data.description;
 
   let proposition = "";
-  let stepByStep = null;
+  let stepByStep = "";
   let answer = "";
 
   const propositionContent = content.split("## Proposition")[1];
