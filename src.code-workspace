@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "src",
+			"path": "src"
+		},
+		{
+			"name": "vscode-cal",
+			"path": "."
+		}
+	],
+	"settings": {
+		"typescript.tsc.autoDetect": "off"
+	}
+}

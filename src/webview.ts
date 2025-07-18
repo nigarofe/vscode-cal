@@ -40,8 +40,8 @@ export function getWebviewContent(
       // console.log("banana debug 2");
       const workspaceFolders = vscode.workspace.workspaceFolders;
 
-      let mainFolder = null;
-      let folderPath = null;
+      let mainFolder;
+      let folderPath;
       if (workspaceFolders && workspaceFolders.length > 0) {
         // Use the first folder as the main workspace
         mainFolder = workspaceFolders[0];
