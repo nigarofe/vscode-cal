@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands";
-import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
-import { saveQuestion } from "./db";
+import { updateDiagnostics } from "./diagnostics";
 import { SidepanelProvider } from "./sidepanelProvider";
 
 export function activate(context: vscode.ExtensionContext) {

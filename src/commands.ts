@@ -1,7 +1,5 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import * as fs from "fs";
-import matter from "gray-matter";
 import { buildAllQuestions, saveQuestion, registerAttempt } from "./db";
 import { getWebviewContent } from "./webview";
 import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
@@ -157,20 +155,12 @@ export function registerCommands(context: vscode.ExtensionContext) {
       const questionNumberMatch = text.match(/^# Question (\d+)/im);
       const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
 
-      // In your previewQuestionCommand function
       const roots = [
         context.extensionUri,
-        // Use the spread operator to include all workspace folder URIs
         ...(vscode.workspace.workspaceFolders || []).map(
           (folder) => folder.uri
         ),
       ].filter(Boolean) as vscode.Uri[];
-
-      // 👇 Add this log to see the whitelisted paths
-      // console.log(
-      //   "✅ Allowed Webview Roots:",
-      //   roots.map((r) => r.fsPath)
-      // );
 
       const panel = vscode.window.createWebviewPanel(
         "questionPreview",

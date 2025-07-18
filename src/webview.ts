@@ -34,43 +34,27 @@ export function getWebviewContent(
     const token = tokens[idx];
     const src = token.attrGet("src");
 
-    // console.log("banana debug 1");
-    // Check if the path is relative and not a web URL
     if (src && !src.startsWith("http") && docUri) {
-      // console.log("banana debug 2");
       const workspaceFolders = vscode.workspace.workspaceFolders;
 
       let mainFolder;
       let folderPath;
       if (workspaceFolders && workspaceFolders.length > 0) {
-        // Use the first folder as the main workspace
         mainFolder = workspaceFolders[0];
         folderPath = mainFolder.uri.fsPath;
         console.log(`The user is in the workspace: ${folderPath}`);
       } else {
-        // Handle the case where no folder is open
         vscode.window.showInformationMessage(
           "No folder is currently open in the workspace."
         );
       }
 
       if (mainFolder) {
-        // console.log("banana debug 3");
-        // Resolve the image path relative to the markdown file's folder
         const onDiskUri = vscode.Uri.joinPath(mainFolder.uri, src);
-
-        // 👇 Add these logs to see the requested path
-        // console.log("--- Image Rendering ---");
-        // console.log("  Original src:", src);
-        // console.log("  Workspace Used:", mainFolder.uri.fsPath);
-        // console.log("  ❌ Requested Path:", onDiskUri.fsPath);
-        // console.log("-----------------------");
-
         const webviewUri = panel.webview.asWebviewUri(onDiskUri);
         token.attrSet("src", webviewUri.toString());
       }
     }
-    // Pass the token to the default renderer
     return defaultImageRenderer(tokens, idx, options, env, self);
   };
 

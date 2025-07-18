@@ -10,9 +10,6 @@ export const GET_QUESTIONS_SQL = `
     ON a.question_number = q.question_number
     GROUP BY q.question_number
   `;
-export const GET_QUESTION_PROPOSITION_SQL = `
-  SELECT proposition, step_by_step FROM questions WHERE question_number = ?
-`;
 export const CREATE_QUESTION_SQL = `
     INSERT INTO questions (discipline, source, description, proposition, step_by_step, answer, tags)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -50,4 +47,3 @@ export const CREATE_TABLES_SQL = `
         ON DELETE CASCADE
     );
 `;
-//# sourceMappingURL=db_sql_queries.js.map
