@@ -15,8 +15,6 @@
 
 import * as vscode from "vscode";
 import * as path from "path";
-import * as fs from "fs";
-import matter from "gray-matter";
 import { buildAllQuestions, saveQuestion, registerAttempt } from "./db";
 import { getWebviewContent } from "./webview";
 import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
@@ -172,20 +170,12 @@ export function registerCommands(context: vscode.ExtensionContext) {
       const questionNumberMatch = text.match(/^# Question (\d+)/im);
       const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
 
-      // In your previewQuestionCommand function
       const roots = [
         context.extensionUri,
-        // Use the spread operator to include all workspace folder URIs
         ...(vscode.workspace.workspaceFolders || []).map(
           (folder) => folder.uri
         ),
       ].filter(Boolean) as vscode.Uri[];
-
-      // 👇 Add this log to see the whitelisted paths
-      // console.log(
-      //   "✅ Allowed Webview Roots:",
-      //   roots.map((r) => r.fsPath)
-      // );
 
       const panel = vscode.window.createWebviewPanel(
         "questionPreview",
@@ -377,7 +367,7 @@ export async function saveQuestion(document: vscode.TextDocument) {
   const description = parsed.data.description;
 
   let proposition = "";
-  let stepByStep = null;
+  let stepByStep = "";
   let answer = "";
 
   const propositionContent = content.split("## Proposition")[1];
@@ -493,9 +483,6 @@ export const GET_QUESTIONS_SQL = `
     ON a.question_number = q.question_number
     GROUP BY q.question_number
   `;
-export const GET_QUESTION_PROPOSITION_SQL = `
-  SELECT proposition, step_by_step FROM questions WHERE question_number = ?
-`;
 export const CREATE_QUESTION_SQL = `
     INSERT INTO questions (discipline, source, description, proposition, step_by_step, answer, tags)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -533,8 +520,6 @@ export const CREATE_TABLES_SQL = `
         ON DELETE CASCADE
     );
 `;
-//# sourceMappingURL=db_sql_queries.js.map
-
 
 // ==========================================================================
 // END OF: ..\db_sql_queries.ts
@@ -545,7 +530,6 @@ export const CREATE_TABLES_SQL = `
 // ==========================================================================
 
 import * as vscode from "vscode";
-import * as path from "path";
 import matter from "gray-matter";
 
 export const diagnosticsCollection =
@@ -654,8 +638,7 @@ export function updateDiagnostics(document: vscode.TextDocument) {
 
 import * as vscode from "vscode";
 import { registerCommands } from "./commands";
-import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
-import { saveQuestion } from "./db";
+import { updateDiagnostics } from "./diagnostics";
 import { SidepanelProvider } from "./sidepanelProvider";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -706,8 +689,6 @@ export function deactivate() {}
 
 import * as vscode from "vscode";
 import * as path from "path";
-import * as fs from "fs";
-import matter from "gray-matter";
 import { buildAllQuestions, saveQuestion, registerAttempt } from "./db";
 import { getWebviewContent } from "./webview";
 import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
@@ -863,20 +844,12 @@ export function registerCommands(context: vscode.ExtensionContext) {
       const questionNumberMatch = text.match(/^# Question (\d+)/im);
       const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
 
-      // In your previewQuestionCommand function
       const roots = [
         context.extensionUri,
-        // Use the spread operator to include all workspace folder URIs
         ...(vscode.workspace.workspaceFolders || []).map(
           (folder) => folder.uri
         ),
       ].filter(Boolean) as vscode.Uri[];
-
-      // 👇 Add this log to see the whitelisted paths
-      // console.log(
-      //   "✅ Allowed Webview Roots:",
-      //   roots.map((r) => r.fsPath)
-      // );
 
       const panel = vscode.window.createWebviewPanel(
         "questionPreview",
@@ -1068,7 +1041,7 @@ export async function saveQuestion(document: vscode.TextDocument) {
   const description = parsed.data.description;
 
   let proposition = "";
-  let stepByStep = null;
+  let stepByStep = "";
   let answer = "";
 
   const propositionContent = content.split("## Proposition")[1];
@@ -1184,9 +1157,6 @@ export const GET_QUESTIONS_SQL = `
     ON a.question_number = q.question_number
     GROUP BY q.question_number
   `;
-export const GET_QUESTION_PROPOSITION_SQL = `
-  SELECT proposition, step_by_step FROM questions WHERE question_number = ?
-`;
 export const CREATE_QUESTION_SQL = `
     INSERT INTO questions (discipline, source, description, proposition, step_by_step, answer, tags)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -1224,8 +1194,6 @@ export const CREATE_TABLES_SQL = `
         ON DELETE CASCADE
     );
 `;
-//# sourceMappingURL=db_sql_queries.js.map
-
 
 // ==========================================================================
 // END OF: ..\db_sql_queries.ts
@@ -1236,7 +1204,6 @@ export const CREATE_TABLES_SQL = `
 // ==========================================================================
 
 import * as vscode from "vscode";
-import * as path from "path";
 import matter from "gray-matter";
 
 export const diagnosticsCollection =
@@ -1345,8 +1312,7 @@ export function updateDiagnostics(document: vscode.TextDocument) {
 
 import * as vscode from "vscode";
 import { registerCommands } from "./commands";
-import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
-import { saveQuestion } from "./db";
+import { updateDiagnostics } from "./diagnostics";
 import { SidepanelProvider } from "./sidepanelProvider";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -1721,43 +1687,27 @@ export function getWebviewContent(
     const token = tokens[idx];
     const src = token.attrGet("src");
 
-    // console.log("banana debug 1");
-    // Check if the path is relative and not a web URL
     if (src && !src.startsWith("http") && docUri) {
-      // console.log("banana debug 2");
       const workspaceFolders = vscode.workspace.workspaceFolders;
 
-      let mainFolder = null;
-      let folderPath = null;
+      let mainFolder;
+      let folderPath;
       if (workspaceFolders && workspaceFolders.length > 0) {
-        // Use the first folder as the main workspace
         mainFolder = workspaceFolders[0];
         folderPath = mainFolder.uri.fsPath;
         console.log(`The user is in the workspace: ${folderPath}`);
       } else {
-        // Handle the case where no folder is open
         vscode.window.showInformationMessage(
           "No folder is currently open in the workspace."
         );
       }
 
       if (mainFolder) {
-        // console.log("banana debug 3");
-        // Resolve the image path relative to the markdown file's folder
         const onDiskUri = vscode.Uri.joinPath(mainFolder.uri, src);
-
-        // 👇 Add these logs to see the requested path
-        // console.log("--- Image Rendering ---");
-        // console.log("  Original src:", src);
-        // console.log("  Workspace Used:", mainFolder.uri.fsPath);
-        // console.log("  ❌ Requested Path:", onDiskUri.fsPath);
-        // console.log("-----------------------");
-
         const webviewUri = panel.webview.asWebviewUri(onDiskUri);
         token.attrSet("src", webviewUri.toString());
       }
     }
-    // Pass the token to the default renderer
     return defaultImageRenderer(tokens, idx, options, env, self);
   };
 
