@@ -1,0 +1,1 @@
+node merge_ts_files.js
