@@ -27,17 +27,11 @@
       },
       {
         "command": "vscode-cal.registerAttempt",
-        "title": "Register attempt (with help)",
-        "args": [
-          0
-        ]
+        "title": "Register Attempt"
       },
       {
-        "command": "vscode-cal.registerAttempt",
-        "title": "Register attempt (without help)",
-        "args": [
-          1
-        ]
+        "command": "vscode-cal.recommendQuestion",
+        "title": "Recommend Question"
       }
     ],
     "viewsContainers": {

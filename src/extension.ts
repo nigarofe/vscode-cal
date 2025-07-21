@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { registerCommands } from "./commands";
+import { registerCommands } from "./commands/index";
 import { updateDiagnostics } from "./diagnostics";
 import { SidepanelProvider } from "./sidepanelProvider";
 
@@ -7,6 +7,8 @@ export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "vscode-cal" is now active!');
 
   registerCommands(context);
+
+  console.log("apple debug 1");
 
   const sidepanelProvider = new SidepanelProvider(context.extensionUri);
   context.subscriptions.push(
