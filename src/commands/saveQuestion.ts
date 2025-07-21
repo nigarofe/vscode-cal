@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { saveQuestion as saveQuestionToDb } from "../db";
+import { saveQuestion } from "../db";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
 
 export function saveQuestionCommand() {
@@ -19,7 +19,7 @@ export function saveQuestionCommand() {
                 );
                 return;
             }
-            saveQuestionToDb(doc);
+            saveQuestion(doc);
         }
     );
 }
