@@ -19,10 +19,24 @@ export function showRankedQuestionsCommand(context: vscode.ExtensionContext) {
                 'rankedQuestions',
                 'Ranked Questions by Memory Gain',
                 vscode.ViewColumn.One,
-                {}
+                {
+                    enableScripts: true
+                }
             );
 
             panel.webview.html = getWebviewContent(sortedQuestions);
+
+            panel.webview.onDidReceiveMessage(
+                message => {
+                    switch (message.command) {
+                        case 'openQuestionByNumber':
+                            vscode.commands.executeCommand('vscode-cal.openQuestionByNumber', message.questionNumber);
+                            return;
+                    }
+                },
+                undefined,
+                context.subscriptions
+            );
         }).catch(err => {
             vscode.window.showErrorMessage("Failed to build questions: " + err);
         });
@@ -45,7 +59,7 @@ function getWebviewContent(questions: Question[]): string {
     const headerHtml = tableHeaders.map(header => `<th>${header}</th>`).join('');
 
     const rows = questions.map(q => `
-        <tr>
+        <tr data-question-number="${q.question_number}" style="cursor: pointer;">
             <td>${q.question_number}</td>
             <td>${q.discipline}</td>
             <td>${q.source}</td>
@@ -78,6 +92,9 @@ function getWebviewContent(questions: Question[]): string {
                 th {
                     background-color: #f2f2f2;
                 }
+                tr:hover {
+                    background-color: #f5f5f5;
+                }
             </style>
         </head>
         <body>
@@ -92,6 +109,20 @@ function getWebviewContent(questions: Question[]): string {
                     ${rows}
                 </tbody>
             </table>
+            <script>
+                const vscode = acquireVsCodeApi();
+                document.querySelectorAll('tr[data-question-number]').forEach(row => {
+                    row.addEventListener('click', event => {
+                        const questionNumber = row.dataset.questionNumber;
+                        if (questionNumber) {
+                            vscode.postMessage({
+                                command: 'openQuestionByNumber',
+                                questionNumber: parseInt(questionNumber)
+                            });
+                        }
+                    });
+                });
+            </script>
         </body>
         </html>
     `;
