@@ -24,6 +24,7 @@ export function getWebviewContent(
   const md = new markdownit({
     html: true,
     linkify: true,
+    breaks: true,
   }).use(katex);
 
   const { content } = matter(text);
