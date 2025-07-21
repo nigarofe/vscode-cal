@@ -1,17 +1,33 @@
-This directory contains the Gherkin feature files that define the behavior of the VS Code extension. These files are used for acceptance testing and to ensure that the software meets the specified requirements. The behavior of each feature is formally defined in the Gherkin .feature files located in their respective subdirectories.
+# Mandatory EARS Headings for `requirements.md`
 
-├───export
-├───question-management
-├───recommendation
-├───render-question
-└───validation-and-diagnostics
+To ensure clarity and consistency, each `requirements.md` file must contain dedicated sections for the following EARS (Easy Approach to Requirements Syntax) patterns. This explicitly defines which patterns are being used for the system's requirements.
 
-It's recommended that the software be implemented and maintained in the following order:
+Source: [EARS (Easy Approach to Requirements Syntax)](https://alistairmavin.com/ears/)
 
-1. question-management/openQuestion.feature
-2. question-management/editQuestion.feature
-3. render-question/renderQuestion.
-4. validation-and-diagnostics/fileDiagnostics.feature
-5. export/exportQuestions.feature
-6. recommendation/questionRecommendation.feature
-7. recommendation/registerAttempt.feature
+---
+## **(Generic)**
+While `<optional pre-condition>`, when `<optional trigger>`, the `<system name>` shall `<system response>`
+
+---
+## **(Ubiquitous)**
+The `<system name>` shall `<system response>`
+
+---
+## **(State driven)**
+While `<precondition(s)>`, the `<system name>` shall `<system response>`
+
+---
+## **(Event driven)**
+When `<trigger>`, the `<system name>` shall `<system response>`
+
+---
+## **(Optional feature)**
+Where `<feature is included>`, the `<system name>` shall `<system response>`
+
+---
+## **(Unwanted behaviour)**
+If `<trigger>`, then the `<system name>` shall `<system response>`
+
+---
+## **(Complex)**
+While `<precondition(s)>`, when `<trigger>`, the `<system name>` shall `<system response>`

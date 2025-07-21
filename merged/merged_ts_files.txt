@@ -35,23 +35,15 @@
 ├───eslint.config.mjs
 ├───features
 │   ├───export
-│   │   ├───exportQuestions.feature
-│   │   └───exportQuestions.steps.ts
 │   ├───question-management
-│   │   ├───editQuestion.feature
-│   │   └───openQuestion.feature
 │   ├───README.md
 │   ├───recommendation
-│   │   ├───questionRecommendation.feature
-│   │   ├───registerAttempt.feature
-│   │   └───viewAllQuestions.feature
 │   ├───render-question
-│   │   └───renderQuestion.feature
 │   └───validation-and-diagnostics
-│       └───fileDiagnostics.feature
 ├───images
 │   ├───diagram.png
 │   └───icon.svg
+├───jest.config.js
 ├───media
 │   ├───main.css
 │   ├───reset.css
@@ -413,7 +405,6 @@
     │   ├───Interface_Implementations.json
     │   └───Text_Generation.json
     ├───README.md
-    ├───vscode_cal.feature
     └───_changelog.md
 
 
