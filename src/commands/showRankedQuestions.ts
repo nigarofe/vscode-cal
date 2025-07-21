@@ -125,6 +125,14 @@ function getWebviewContent(questions: Question[]): string {
                 }
                 th {
                     background-color: #f2f2f2;
+                    cursor: pointer;
+                    user-select: none;
+                }
+                th.sort-asc::after {
+                    content: ' ▲';
+                }
+                th.sort-desc::after {
+                    content: ' ▼';
                 }
                 tr:hover {
                     background-color: #f5f5f5 !important;
@@ -134,7 +142,7 @@ function getWebviewContent(questions: Question[]): string {
         </head>
         <body>
             <h1>Questions Ranked by PMG-X ${rows.length}</h1>
-            <table>
+            <table id="questionsTable">
                 <thead>
                     <tr>
                         ${headerHtml}
@@ -157,6 +165,81 @@ function getWebviewContent(questions: Question[]): string {
                         }
                     });
                 });
+
+                document.querySelectorAll('#questionsTable th').forEach((header, index) => {
+                    header.addEventListener('click', () => {
+                        sortTable(index);
+                    });
+                });
+
+                let sortDirections = [];
+
+                function sortTable(columnIndex) {
+                    const table = document.getElementById('questionsTable');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const headers = table.querySelectorAll('th');
+
+                    const direction = sortDirections[columnIndex] === 'asc' ? 'desc' : 'asc';
+                    sortDirections = new Array(headers.length).fill(null); // Reset other directions
+                    sortDirections[columnIndex] = direction;
+
+                    // Special sort for PMG-X column (index 8)
+                    if (columnIndex === 8) {
+                        const pmgOrder = { 'W/H': 1, 'SA': 2, 'NA': 3 };
+                        rows.sort((a, b) => {
+                            const aText = a.cells[columnIndex].textContent.trim();
+                            const bText = b.cells[columnIndex].textContent.trim();
+
+                            const isNumA = !isNaN(parseFloat(aText));
+                            const isNumB = !isNaN(parseFloat(bText));
+
+                            if (isNumA && isNumB) {
+                                return parseFloat(aText) - parseFloat(bText);
+                            }
+                            if (isNumA) return -1;
+                            if (isNumB) return 1;
+                            
+                            return (pmgOrder[aText] || 99) - (pmgOrder[bText] || 99);
+                        });
+
+                        if (direction === 'desc') {
+                            rows.reverse();
+                        }
+
+                    } else {
+                        rows.sort((a, b) => {
+                            const aText = a.cells[columnIndex].textContent.trim();
+                            const bText = b.cells[columnIndex].textContent.trim();
+
+                            const aNum = parseFloat(aText);
+                            const bNum = parseFloat(bText);
+
+                            let valA, valB;
+
+                            if (!isNaN(aNum) && !isNaN(bNum)) {
+                                valA = aNum;
+                                valB = bNum;
+                            } else {
+                                valA = aText.toLowerCase();
+                                valB = bText.toLowerCase();
+                            }
+                            
+                            if (valA < valB) return -1;
+                            if (valA > valB) return 1;
+                            return 0;
+                        });
+
+                        if (direction === 'desc') {
+                            rows.reverse();
+                        }
+                    }
+
+                    headers.forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+                    headers[columnIndex].classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+
+                    rows.forEach(row => tbody.appendChild(row));
+                }
             </script>
         </body>
         </html>
