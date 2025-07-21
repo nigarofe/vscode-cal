@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
-import * as commands from '../commands';
+import * as commands from '../commands/commandsLoader';
 import * as db from '../db';
 import * as diagnostics from '../diagnostics';
 import { Question } from '../Question';
