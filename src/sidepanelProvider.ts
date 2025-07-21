@@ -42,6 +42,10 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
           vscode.commands.executeCommand("vscode-cal.saveQuestion");
           break;
         }
+        case "recommendQuestion": {
+          vscode.commands.executeCommand("vscode-cal.recommendQuestion");
+          break;
+        }
         case "registerAttempt": {
           vscode.commands.executeCommand(
             "vscode-cal.registerAttempt",
