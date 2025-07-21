@@ -27,10 +27,10 @@ export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
                         LaMI: q.latestMemoryInterval,
                         "PMG-D": q.potentialMemoryGainInDays,
                         "PMG-X": q.potentialMemoryGainMultiplier,
-                        total_attempts: q.attemptsSummary.total,
-                        memory_attempts: q.attemptsSummary.withoutHelp,
-                        help_attempts: q.attemptsSummary.withHelp,
-                        attempts_summary: `${q.attemptsSummary.total};${q.attemptsSummary.withoutHelp};${q.attemptsSummary.withHelp}`,
+                        total_attempts: q.attemptsWithHelp + q.attemptsWithoutHelp,
+                        memory_attempts: q.attemptsWithoutHelp,
+                        help_attempts: q.attemptsWithHelp,
+                        attempts_summary: q.attemptsSummary,
                     },
                 }));
 

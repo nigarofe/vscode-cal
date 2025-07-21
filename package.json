@@ -32,6 +32,10 @@
       {
         "command": "vscode-cal.recommendQuestion",
         "title": "Recommend Question"
+      },
+      {
+        "command": "vscode-cal.showRankedQuestions",
+        "title": "Show Ranked Questions by Memory Gain"
       }
     ],
     "viewsContainers": {

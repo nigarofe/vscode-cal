@@ -6,6 +6,7 @@ import { saveQuestionCommand } from "./saveQuestion";
 import { registerAttemptCommand } from "./registerAttempt";
 import { onDidChangeTextDocument } from "./onDidChangeTextDocument";
 import { recommendQuestionCommand } from "./recommendQuestion";
+import { showRankedQuestionsCommand } from "./showRankedQuestions";
 
 export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(exportQuestionsJsonCommand(context));
@@ -14,5 +15,6 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(saveQuestionCommand());
     context.subscriptions.push(registerAttemptCommand());
     context.subscriptions.push(recommendQuestionCommand(context));
+    context.subscriptions.push(showRankedQuestionsCommand(context));
     onDidChangeTextDocument(context);
 }
