@@ -56,11 +56,11 @@
                     });
 
                     registerAttemptWithoutHelpButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'registerAttemptWithoutHelp' });
+                        vscode.postMessage({ type: 'registerAttempt', value: 1 });
                     });
 
                     registerAttemptWithHelpButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'registerAttemptWithHelp' });
+                        vscode.postMessage({ type: 'registerAttempt', value: 0 });
                     });
 				</script>
 			</body>

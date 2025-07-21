@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 import { registerAttempt } from "../db";
 
-export function registerAttemptWithoutHelpCommand() {
+export function registerAttemptCommand() {
     return vscode.commands.registerCommand(
-        "vscode-cal.registerAttemptWithoutHelp",
-        () => {
+        "vscode-cal.registerAttempt",
+        (attemptCode: number) => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 vscode.window.showInformationMessage("No active editor.");
@@ -17,7 +17,7 @@ export function registerAttemptWithoutHelpCommand() {
                 return;
             }
             const questionNumber = parseInt(questionNumberMatch[1], 10);
-            registerAttempt(questionNumber, 1);
+            registerAttempt(questionNumber, attemptCode);
         }
     );
 }

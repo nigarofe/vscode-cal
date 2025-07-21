@@ -26,12 +26,18 @@
         "title": "Preview Question"
       },
       {
-        "command": "vscode-cal.registerAttemptWithoutHelp",
-        "title": "Register Attempt Without Help"
+        "command": "vscode-cal.registerAttempt",
+        "title": "Register attempt (with help)",
+        "args": [
+          0
+        ]
       },
       {
-        "command": "vscode-cal.registerAttemptWithHelp",
-        "title": "Register Attempt With Help"
+        "command": "vscode-cal.registerAttempt",
+        "title": "Register attempt (without help)",
+        "args": [
+          1
+        ]
       }
     ],
     "viewsContainers": {
