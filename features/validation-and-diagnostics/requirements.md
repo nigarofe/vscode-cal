@@ -10,6 +10,7 @@
   * When a user opens a question file, the system shall run diagnostics and display any errors found.
   * When a user saves a question file, the system shall run diagnostics and display any errors found.
   * When a user changes the content of a question file, the system shall run diagnostics and display any errors found.
+  * When the editor for question `{question_number}` is opened, the system shall ensure the editor content contains the "## Proposition", "## Step-by-step", and "## Answer" sections.
 
 ## **(Optional feature)**
 
