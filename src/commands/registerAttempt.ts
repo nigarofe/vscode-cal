@@ -32,7 +32,7 @@ export function registerAttemptCommand() {
                     return; // User cancelled the input
                 }
             }
-            
+
             registerAttempt(questionNumber, attemptCode);
         }
     );

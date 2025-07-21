@@ -136,27 +136,27 @@ export async function saveQuestion(document: vscode.TextDocument) {
 }
 
 export async function registerAttempt(questionNumber: number, code: number) {
-    const dbPath = path.join(
-        vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
-        "src",
-        "db.db"
-    );
-    const db = new sqlite3.Database(dbPath);
+  const dbPath = path.join(
+    vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
+    "src",
+    "db.db"
+  );
+  const db = new sqlite3.Database(dbPath);
 
-    db.run(
-        "INSERT INTO attempts (question_number, code) VALUES (?, ?)",
-        [questionNumber, code],
-        function (err) {
-            if (err) {
-                vscode.window.showErrorMessage(
-                    `Error registering attempt: ${err.message}`
-                );
-            } else {
-                vscode.window.showInformationMessage(
-                    `Attempt for question ${questionNumber} registered successfully.`
-                );
-            }
-        }
-    );
-    db.close();
+  db.run(
+    "INSERT INTO attempts (question_number, code) VALUES (?, ?)",
+    [questionNumber, code],
+    function (err) {
+      if (err) {
+        vscode.window.showErrorMessage(
+          `Error registering attempt: ${err.message}`
+        );
+      } else {
+        vscode.window.showInformationMessage(
+          `Attempt for question ${questionNumber} registered successfully.`
+        );
+      }
+    }
+  );
+  db.close();
 }

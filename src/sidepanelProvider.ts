@@ -7,7 +7,7 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 
   private _view?: vscode.WebviewView;
 
-  constructor(private readonly _extensionUri: vscode.Uri) {}
+  constructor(private readonly _extensionUri: vscode.Uri) { }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -54,8 +54,8 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "showRankedQuestions": {
-            vscode.commands.executeCommand("vscode-cal.showRankedQuestions");
-            break;
+          vscode.commands.executeCommand("vscode-cal.showRankedQuestions");
+          break;
         }
       }
     });
@@ -83,10 +83,10 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
     let html = fs.readFileSync(htmlPath, 'utf8');
 
     html = html.replace(/\${webview.cspSource}/g, webview.cspSource)
-               .replace(/\${nonce}/g, nonce)
-               .replace(/\${styleResetUri}/g, styleResetUri.toString())
-               .replace(/\${styleVSCodeUri}/g, styleVSCodeUri.toString())
-               .replace(/\${styleMainUri}/g, styleMainUri.toString());
+      .replace(/\${nonce}/g, nonce)
+      .replace(/\${styleResetUri}/g, styleResetUri.toString())
+      .replace(/\${styleVSCodeUri}/g, styleVSCodeUri.toString())
+      .replace(/\${styleMainUri}/g, styleMainUri.toString());
 
     return html;
   }

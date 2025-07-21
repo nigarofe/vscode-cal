@@ -84,14 +84,14 @@ function getWebviewContent(questions: Question[]): string {
     const numericPmgs = questions
         .map(q => q.potentialMemoryGainMultiplier)
         .filter(pmg => typeof pmg === 'number' && pmg > 1) as number[];
-    
+
     const minPmg = Math.min(...numericPmgs);
     const maxPmg = Math.max(...numericPmgs);
 
     const rows = questions.map(q => {
         const pmgX = q.potentialMemoryGainMultiplier;
         const colorStyle = getHighlightColor(pmgX, minPmg, maxPmg);
-        
+
         return `
         <tr data-question-number="${q.question_number}" style="cursor: pointer; ${colorStyle}">
             <td>${q.question_number}</td>
@@ -104,7 +104,8 @@ function getWebviewContent(questions: Question[]): string {
             <td>${q.potentialMemoryGainInDays}</td>
             <td>${pmgX}</td>
         </tr>
-    `}).join('');
+    `;
+    }).join('');
 
     return `
         <!DOCTYPE html>
