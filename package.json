@@ -65,6 +65,7 @@
     "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/sinon": "^17.0.4",
     "@types/vscode": "^1.102.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
@@ -73,6 +74,7 @@
     "eslint": "^9.25.1",
     "jest": "^30.0.4",
     "jest-mock-vscode": "^4.5.0",
+    "sinon": "^21.0.0",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"
   },
