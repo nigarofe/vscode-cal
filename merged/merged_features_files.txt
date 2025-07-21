@@ -1,13 +1,16 @@
 # Features Folder Structure
 
-├───attempt-tracking
-│   └───registerAttempt.feature
 ├───export
 │   ├───exportQuestions.feature
 │   └───exportQuestions.steps.ts
 ├───question-management
 │   ├───editQuestion.feature
 │   └───openQuestion.feature
+├───README.md
+├───recommendation
+│   ├───questionRecommendation.feature
+│   ├───registerAttempt.feature
+│   └───viewAllQuestions.feature
 ├───render-question
 │   └───renderQuestion.feature
 └───validation-and-diagnostics
@@ -15,24 +18,23 @@
 
 
 // =================================================================================================
-// FILE: features/attempt-tracking/registerAttempt.feature
-// =================================================================================================
-
-Scenario Outline: Registering different types of attempts
-  Given I have question number 7 open
-  When I register an attempt <help_status>
-  Then the database should record an attempt for question 7 with code <code>
-
-  Examples:
-    | help_status       | code |
-    | "with help"       | 0    |
-    | "without help"    | 1    |
-
-// =================================================================================================
 // FILE: features/export/exportQuestions.feature
 // =================================================================================================
 
+Feature: Exporting questions to a JSON file
+  This feature tests the ability to export all questions and their associated data
+  from the database to a JSON file.
 
+  Background:
+    Given the database is initialized with several questions and attempts
+
+  Scenario: Successfully exporting questions
+    When I run the "exportQuestionsJson" command
+    Then a new JSON file should be created in the "src/.json" directory
+    And the file name should start with a timestamp and end with "_questions.json"
+    And the JSON file should be valid
+    And the JSON content should have a "questions" key with a list of all questions
+    And each question in the JSON should have the correct structure, including "number", "discipline", "source", "description", "proposition", "step-by-step", "answer", "tags", and "spaced_repetition_variables"
 
 // =================================================================================================
 // FILE: features/export/exportQuestions.steps.ts
@@ -44,22 +46,230 @@ Scenario Outline: Registering different types of attempts
 // FILE: features/question-management/editQuestion.feature
 // =================================================================================================
 
+Feature: Saving changes to a question
+  This feature tests saving a modified question to the database.
 
+  Background:
+    Given the database is initialized
+    And I have question number 7 open in the editor
+
+  Scenario: Saving a valid question
+    When I modify the "description" in the front matter of question 7
+    And I run the "saveQuestion" command
+    Then the database should be updated with the new description for question 7
+    And I should see a success message "Question 7 updated successfully."
+
+  Scenario: Attempting to save a question with validation errors
+    When I remove the "## Proposition" heading from the question's content
+    And I run the "saveQuestion" command
+    Then I should see an error message "Cannot save, please fix the errors first."
+    And the database should not be updated with the invalid content
 
 // =================================================================================================
 // FILE: features/question-management/openQuestion.feature
 // =================================================================================================
 
+Feature: Opening a question by its number
+  This feature ensures that users can easily open a question by providing its number.
 
+  Background:
+    Given the database is initialized with a question number 7
+
+  Scenario: Opening an existing question
+    When I run the "openQuestionByNumber" command and enter "7"
+    Then a new markdown editor should open
+    And the editor content should start with "# Question 7"
+    And the editor content should contain the correct front matter for question 7, including "discipline", "description", "source", and "tags" [cite: 56]
+    And the editor content should contain the "## Proposition", "## Step-by-step", and "## Answer" sections [cite: 58, 59]
+
+  Scenario: Attempting to open a non-existent question
+    When I run the "openQuestionByNumber" command and enter "999"
+    Then I should see an error message "Question number 999 not found."
+
+  Scenario: Entering an invalid question number
+    When I run the "openQuestionByNumber" command and enter "abc"
+    Then I should see an error message "Please enter a valid number."
+
+// =================================================================================================
+// FILE: features/README.md
+// =================================================================================================
+
+The Features Folder has the following structure:
+
+├───export
+│   ├───exportQuestions.feature
+│   └───exportQuestions.steps.ts
+├───question-management
+│   ├───editQuestion.feature
+│   └───openQuestion.feature
+├───README.md
+├───recommendation
+│   ├───questionRecommendation.feature
+│   ├───registerAttempt.feature
+│   └───viewAllQuestions.feature
+├───render-question
+│   └───renderQuestion.feature
+└───validation-and-diagnostics
+    └───fileDiagnostics.feature
+
+
+It's recommended that the software be implemented and maintained in the following order:
+
+1. question-management/openQuestion.feature
+2. question-management/editQuestion.feature
+3. render-question/renderQuestion.
+4. validation-and-diagnostics/fileDiagnostics.feature
+5. export/exportQuestions.feature
+6. recommendation/questionRecommendation.feature
+7. recommendation/registerAttempt.feature
+
+
+
+// =================================================================================================
+// FILE: features/recommendation/questionRecommendation.feature
+// =================================================================================================
+
+Feature: Question Recommendation
+  This feature provides users with question recommendations based on a spaced repetition algorithm to optimize learning. The system should prioritize questions based on their potential memory gain multiplier.
+
+Background:
+    Given the database is initialized with questions and their corresponding attempts
+
+Scenario: Successfully recommending a question
+    Given there are several questions with different attempt histories and spaced repetition values
+    When I run the "recommendQuestion" command
+    Then the system should identify the question with the highest "potentialMemoryGainMultiplier"
+    And a new markdown editor should open with the content of the recommended question
+
+Scenario: No questions are due for review
+    Given all questions have a "potentialMemoryGainMultiplier" less than 1.0 or a non-numeric status
+    When I run the "recommendQuestion" command
+    Then I should see an information message stating "No questions are due for review at the moment. Great job!"
+
+Scenario: Handling a database with no questions
+    Given the questions table in the database is empty
+    When I run the "recommendQuestion" command
+    Then I should see an error message stating "No questions found in the database to recommend."
+
+Scenario: Recommending a question among several candidates
+    Given question 8 has a "potentialMemoryGainMultiplier" of 1.5
+    And question 12 has a "potentialMemoryGainMultiplier" of 2.5
+    And question 21 has a "potentialMemoryGainMultiplier" of 1.0
+    When I run the "recommendQuestion" command
+    Then the system should open question 12 in a new editor
+
+// =================================================================================================
+// FILE: features/recommendation/registerAttempt.feature
+// =================================================================================================
+
+Feature: Registering attempts for a question
+  This feature ensures that user attempts are correctly registered in the database
+  and that the user receives appropriate feedback.
+
+  Background:
+    Given the database is initialized
+    And a question with number 7 exists in the database
+
+  Scenario Outline: Registering different types of attempts via command
+    Given I have question number 7 open in the editor
+    When I register an attempt <help_status> using the command palette
+    Then the database should record an attempt for question 7 with code <code>
+    And I should see a success message confirming the attempt was registered
+
+    Examples:
+      | help_status    | code |
+      | "with help"    | 0    |
+      | "without help" | 1    |
+
+  Scenario: Attempting to register an attempt with no active editor
+    Given I have no file open in the editor
+    When I register an attempt "without help" using the command palette
+    Then I should see an information message stating "No active editor."
+
+  Scenario: Attempting to register an attempt for a non-question file
+    Given I have a non-question file open in the editor
+    When I register an attempt "with help" using the command palette
+    Then I should see an error message stating "Could not determine question number."
+
+// =================================================================================================
+// FILE: features/recommendation/viewAllQuestions.feature
+// =================================================================================================
+
+Feature: Viewing all questions in a sorted panel
+  This feature allows users to see a complete list of their questions in a single panel,
+  sorted by the "Potential Memory Gain Multiplier" to help them decide what to study next.
+
+Background:
+    Given the database is initialized with several questions and attempts
+
+Scenario: Opening the panel and viewing sorted questions
+    Given question 8 has a "potentialMemoryGainMultiplier" of 1.5
+    And question 12 has a "potentialMemoryGainMultiplier" of 2.5
+    And question 21 has a string-based "potentialMemoryGainMultiplier" like "NA"
+    When I run the "showAllQuestions" command
+    Then a webview panel should open with the title "All Questions"
+    And the panel should display a table of questions
+    And the questions in the table should be sorted in descending order by their multiplier, with question 12 appearing before question 8
+
+Scenario: Interacting with the panel to open a question
+    Given the "All Questions" panel is open and displays question 7
+    When I click on the table row corresponding to question number 7
+    Then the "openQuestionByNumber" command should be executed for question 7
+    And a new markdown editor should open with the content of question 7
 
 // =================================================================================================
 // FILE: features/render-question/renderQuestion.feature
 // =================================================================================================
 
+Feature: Previewing a question
+  This feature ensures that the question preview renders correctly, including markdown, LaTeX, and images.
 
+  Background:
+    Given I have a question open in the editor
+
+  Scenario: Opening the question preview
+    When I run the "previewQuestion" command
+    Then a webview panel should open with the title "Preview Q<question_number>" [cite: 65]
+    And the webview should render the question's proposition, step-by-step, and answer as HTML
+
+  Scenario: Rendering LaTeX in the preview
+    Given the question's proposition contains the LaTeX expression "$$E=mc^2$$"
+    When I preview the question
+    Then the webview should correctly render the LaTeX as a mathematical formula
+
+  Scenario: Rendering local images in the preview
+    Given the question's step-by-step section contains an image `![alt text](images/diagram.png)`
+    When I preview the question
+    Then the webview should display the image "images/diagram.png" from the workspace
 
 // =================================================================================================
 // FILE: features/validation-and-diagnostics/fileDiagnostics.feature
 // =================================================================================================
 
+Feature: File diagnostics for question files
+  This feature ensures that the extension provides helpful diagnostics for malformed question files.
 
+  Scenario Outline: Missing front matter fields
+    Given I have a question file open that is missing the "<field>" field in its front matter
+    When the diagnostics are updated
+    Then a diagnostic error should be reported with the message "Front matter is missing the '<field>' field."
+
+    Examples:
+      | field        |
+      | discipline   |
+      | source       |
+
+  Scenario: 'tags' field is not an array
+    Given I have a question file open where 'tags' is a string instead of an array
+    When the diagnostics are updated
+    Then a diagnostic error should be reported with the message "Front matter must have 'tags' as an array."
+
+  Scenario Outline: Missing required headings
+    Given I have a question file open that is missing the "<heading>" heading
+    When the diagnostics are updated
+    Then a diagnostic error should be reported with the message "Markdown body is missing the '<heading>' heading."
+
+    Examples:
+      | heading           |
+      | ## Proposition    |
+      | ## Answer         |

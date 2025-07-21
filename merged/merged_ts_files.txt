@@ -34,14 +34,17 @@
 ├───CHANGELOG.md
 ├───eslint.config.mjs
 ├───features
-│   ├───attempt-tracking
-│   │   └───registerAttempt.feature
 │   ├───export
 │   │   ├───exportQuestions.feature
 │   │   └───exportQuestions.steps.ts
 │   ├───question-management
 │   │   ├───editQuestion.feature
 │   │   └───openQuestion.feature
+│   ├───README.md
+│   ├───recommendation
+│   │   ├───questionRecommendation.feature
+│   │   ├───registerAttempt.feature
+│   │   └───viewAllQuestions.feature
 │   ├───render-question
 │   │   └───renderQuestion.feature
 │   └───validation-and-diagnostics
