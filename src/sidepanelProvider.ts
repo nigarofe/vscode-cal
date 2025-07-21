@@ -25,13 +25,11 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.onDidReceiveMessage((data) => {
       switch (data.type) {
-        case "questionEntered": {
-          if (data.value) {
-            vscode.commands.executeCommand(
-              "vscode-cal.openQuestionByNumber",
-              parseInt(data.value)
-            );
-          }
+        case "openQuestion": {
+          vscode.commands.executeCommand(
+            "vscode-cal.openQuestionByNumber",
+            parseInt(data.value)
+          );
           break;
         }
         case "previewQuestion": {
@@ -92,6 +90,9 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 					<div class="input-container">
 						<input type="text" id="question-number" placeholder="Enter question number" />
 					</div>
+          <div class="button-container">
+						<button id="open-question-button" class="primary">Open Question</button>
+					</div>
 					<div class="button-container">
 						<button id="preview-button" class="primary">Preview Question</button>
 					</div>
@@ -109,20 +110,14 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 				<script nonce="${nonce}">
                     const vscode = acquireVsCodeApi();
                     const input = document.getElementById('question-number');
+                    const openQuestionButton = document.getElementById('open-question-button');
                     const previewButton = document.getElementById('preview-button');
                     const saveButton = document.getElementById('save-button');
                     const registerAttemptWithoutHelpButton = document.getElementById('register-attempt-without-help-button');
                     const registerAttemptWithHelpButton = document.getElementById('register-attempt-with-help-button');
-                    
-                    let timeout;
-                    input.addEventListener('keyup', () => {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(() => {
-                            vscode.postMessage({
-                                type: 'questionEntered',
-                                value: input.value
-                            });
-                        }, 500);
+
+                    openQuestionButton.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'openQuestion', value: input.value });
                     });
 
                     previewButton.addEventListener('click', () => {
