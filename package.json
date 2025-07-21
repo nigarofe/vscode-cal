@@ -11,6 +11,9 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onView:cal-question-view"
+  ],
   "contributes": {
     "commands": [
       {
@@ -36,8 +39,22 @@
       {
         "command": "vscode-cal.showRankedQuestions",
         "title": "Show Ranked Questions by Memory Gain"
+      },
+      {
+        "command": "vscode-cal.createQuestion",
+        "title": "Create Question"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vscode-cal.createQuestion",
+          "when": "view == cal-question-view",
+          "group": "navigation",
+          "icon": "$(add)"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {

@@ -47,3 +47,21 @@ export const CREATE_TABLES_SQL = `
         ON DELETE CASCADE
     );
 `;
+
+export const GET_QUESTION_BY_NUMBER_SQL = `
+    SELECT
+  q.*,
+  COALESCE(
+    json_group_array(a.code ORDER BY a.attempt_datetime), '[]' ) AS code_vec_json,
+  COALESCE(
+    json_group_array(a.attempt_datetime ORDER BY a.attempt_datetime), '[]' ) AS date_vec_json
+    FROM questions AS q
+    LEFT JOIN attempts AS a
+    ON a.question_number = q.question_number
+    WHERE q.question_number = ?
+    GROUP BY q.question_number
+`;
+
+export const GET_MAX_QUESTION_NUMBER_SQL = `
+    SELECT MAX(question_number) as max_number FROM questions
+`;

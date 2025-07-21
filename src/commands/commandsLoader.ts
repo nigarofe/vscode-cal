@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { createQuestionCommand } from "./createQuestion";
 import { exportQuestionsJsonCommand } from "./exportQuestionsJson";
 import { openQuestionByNumberCommand } from "./openQuestionByNumber";
 import { previewQuestionCommand } from "./previewQuestion";
@@ -9,6 +10,7 @@ import { recommendQuestionCommand } from "./recommendQuestion";
 import { showRankedQuestionsCommand } from "./showRankedQuestions";
 
 export function registerCommands(context: vscode.ExtensionContext) {
+    context.subscriptions.push(createQuestionCommand(context));
     context.subscriptions.push(exportQuestionsJsonCommand(context));
     context.subscriptions.push(openQuestionByNumberCommand(context));
     context.subscriptions.push(previewQuestionCommand(context));

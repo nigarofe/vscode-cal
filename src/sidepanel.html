@@ -24,6 +24,9 @@
 					<div class="button-container">
 						<button id="save-button" class="primary">Save Question</button>
 					</div>
+					<div class="button-container">
+						<button id="create-question-button" class="primary">Create Question</button>
+					</div>
 
           <h2>Recommendation System</h2>
           <div class="button-container">
@@ -48,6 +51,7 @@
                     const openQuestionButton = document.getElementById('open-question-button');
                     const previewButton = document.getElementById('preview-button');
                     const saveButton = document.getElementById('save-button');
+                    const createQuestionButton = document.getElementById('create-question-button');
                     const recommendQuestionButton = document.getElementById('recommend-question-button');
                     const registerAttemptWithoutHelpButton = document.getElementById('register-attempt-without-help-button');
                     const registerAttemptWithHelpButton = document.getElementById('register-attempt-with-help-button');
@@ -63,6 +67,10 @@
 
                     saveButton.addEventListener('click', () => {
                         vscode.postMessage({ type: 'saveQuestion' });
+                    });
+
+                    createQuestionButton.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'createQuestion' });
                     });
 
                     recommendQuestionButton.addEventListener('click', () => {

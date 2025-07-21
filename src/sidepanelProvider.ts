@@ -57,6 +57,10 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
           vscode.commands.executeCommand("vscode-cal.showRankedQuestions");
           break;
         }
+        case "createQuestion": {
+            vscode.commands.executeCommand("vscode-cal.createQuestion");
+            break;
+        }
       }
     });
   }
