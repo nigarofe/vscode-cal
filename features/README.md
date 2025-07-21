@@ -1,4 +1,29 @@
-# Mandatory EARS Headings for `requirements.md`
+# Features
+
+This directory contains the feature definitions for the VS Code extension. Each feature is described in a dedicated subdirectory, which includes a `requirements.md` file outlining the feature's behavior. These requirements are used for acceptance testing and to ensure that the software meets the specified functionality.
+
+## Feature Overview
+
+The extension is composed of the following features:
+
+*   **[Question Management](./question-management/)**: Handles the creation, retrieval, and updating of questions. This includes opening questions in the editor, saving changes to the database, and managing the content of question files.
+*   **[Render Question](./render-question/)**: Responsible for previewing questions in a webview panel. It renders the question's content, including Markdown, LaTeX, and images, into HTML.
+*   **[Validation and Diagnostics](./validation-and-diagnostics/)**: Provides real-time validation of question files. It checks for errors in the front matter and Markdown body, and displays diagnostic information in the editor.
+*   **[Export](./export/)**: Allows for the exporting of questions from the database into a JSON file. This is useful for backups, sharing, or external processing.
+*   **[Recommendation](./recommendation/)**: Implements a spaced repetition-based question recommendation system. It suggests questions for review based on their potential memory gain and provides a view of all questions sorted by this metric.
+
+## Implementation Order
+
+It is recommended that the features be implemented and maintained in the following order to ensure a logical development progression:
+
+1.  **Question Management**
+2.  **Render Question**
+3.  **Validation and Diagnostics**
+4.  **Export**
+5.  **Recommendation**
+
+<details>
+<summary>Writing Feature Requirements (EARS)</summary>
 
 To ensure clarity and consistency, each `requirements.md` file must contain dedicated sections for the following EARS (Easy Approach to Requirements Syntax) patterns. This explicitly defines which patterns are being used for the system's requirements.
 
@@ -33,21 +58,4 @@ If `<trigger>`, then the `<system name>` shall `<system response>`
 ## **(Complex)**
 While `<precondition(s)>`, when `<trigger>`, the `<system name>` shall `<system response>`
 
-
-
-# Implementation order
-This directory contains the feature files that define the behavior of the VS Code extension. These files are used for acceptance testing and to ensure that the software meets the specified requirements. The behavior of each feature is formally defined in the requirements.md files located in their respective subdirectories.
-
-├───export
-├───question-management
-├───recommendation
-├───render-question
-└───validation-and-diagnostics
-
-It's recommended that the software be implemented and maintained in the following order:
-
-1. question-management
-2. render-question
-3. validation-and-diagnostics
-4. export/exportQuestions
-5. recommendation/questionRecommendation
+</details>
