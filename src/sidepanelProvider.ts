@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 
 export class SidepanelProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "cal-question-view";
@@ -55,7 +57,6 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
-    // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "media", "main.js")
     );
@@ -71,73 +72,18 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this._extensionUri, "media", "main.css")
     );
 
-    // Use a nonce to only allow a specific script to be run.
     const nonce = getNonce();
 
-    return /*html*/ `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link href="${styleResetUri}" rel="stylesheet">
-                <link href="${styleVSCodeUri}" rel="stylesheet">
-                <link href="${styleMainUri}" rel="stylesheet">
-				<title>Question Selector</title>
-			</head>
-			<body>
-				<div class="container">
-					<div class="input-container">
-						<input type="text" id="question-number" placeholder="Enter question number" />
-					</div>
-          <div class="button-container">
-						<button id="open-question-button" class="primary">Open Question</button>
-					</div>
-					<div class="button-container">
-						<button id="preview-button" class="primary">Preview Question</button>
-					</div>
-					<div class="button-container">
-						<button id="save-button" class="primary">Save Question</button>
-					</div>
-                    <div class="button-container">
-                        <button id="register-attempt-without-help-button" class="secondary-green">Register attempt without help</button>
-                    </div>
-                    <div class="button-container">
-                        <button id="register-attempt-with-help-button" class="secondary-yellow">Register attempt with help</button>
-                    </div>
-				</div>
+    const htmlPath = path.join(this._extensionUri.fsPath, 'src', 'sidepanel.html');
+    let html = fs.readFileSync(htmlPath, 'utf8');
 
-				<script nonce="${nonce}">
-                    const vscode = acquireVsCodeApi();
-                    const input = document.getElementById('question-number');
-                    const openQuestionButton = document.getElementById('open-question-button');
-                    const previewButton = document.getElementById('preview-button');
-                    const saveButton = document.getElementById('save-button');
-                    const registerAttemptWithoutHelpButton = document.getElementById('register-attempt-without-help-button');
-                    const registerAttemptWithHelpButton = document.getElementById('register-attempt-with-help-button');
+    html = html.replace(/\${webview.cspSource}/g, webview.cspSource)
+               .replace(/\${nonce}/g, nonce)
+               .replace(/\${styleResetUri}/g, styleResetUri.toString())
+               .replace(/\${styleVSCodeUri}/g, styleVSCodeUri.toString())
+               .replace(/\${styleMainUri}/g, styleMainUri.toString());
 
-                    openQuestionButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'openQuestion', value: input.value });
-                    });
-
-                    previewButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'previewQuestion' });
-                    });
-
-                    saveButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'saveQuestion' });
-                    });
-
-                    registerAttemptWithoutHelpButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'registerAttemptWithoutHelp' });
-                    });
-
-                    registerAttemptWithHelpButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'registerAttemptWithHelp' });
-                    });
-				</script>
-			</body>
-			</html>`;
+    return html;
   }
 }
 
