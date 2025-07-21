@@ -174,6 +174,62 @@ function getWebviewContent(questions: Question[]): string {
 
                 let sortDirections = [];
 
+                function getPmgxHighlightColor(pmgX, minPmg, maxPmg) {
+                    if (typeof pmgX === 'string') {
+                        switch (pmgX) {
+                            case 'NA': return 'background-color: #F0F0F0;';
+                            case 'SA': return 'background-color: #E6E0F8;';
+                            case 'W/H': return 'background-color: #FFDDC1;';
+                            default: return '';
+                        }
+                    }
+                    if (pmgX <= 1) {
+                        return 'background-color: #006400; color: white;';
+                    }
+                    const hue = 120 * (1 - (pmgX - minPmg) / (maxPmg - minPmg));
+                    return 'background-color: hsl(' + hue + ', 100%, 85%);';
+                }
+
+                function updateRowColors(columnIndex) {
+                    const table = document.getElementById('questionsTable');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const numericColorCols = [0, 5, 6, 7];
+
+                    rows.forEach(row => {
+                        row.style.backgroundColor = '';
+                        row.style.color = '';
+                    });
+
+                    if (columnIndex === 8) { // PMG-X
+                        const pmgValues = rows.map(row => {
+                            const text = row.cells[columnIndex].textContent.trim();
+                            if (['NA', 'SA', 'W/H'].includes(text)) return text;
+                            return parseFloat(text);
+                        });
+                        const numericPmgs = pmgValues.filter(v => typeof v === 'number' && v > 1);
+                        const minPmg = Math.min(...numericPmgs);
+                        const maxPmg = Math.max(...numericPmgs);
+
+                        rows.forEach((row, i) => {
+                            const style = getPmgxHighlightColor(pmgValues[i], minPmg, maxPmg);
+                            row.setAttribute('style', "cursor: pointer; " + style);
+                        });
+
+                    } else if (numericColorCols.includes(columnIndex)) {
+                        const values = rows.map(row => parseFloat(row.cells[columnIndex].textContent.trim())).filter(v => !isNaN(v));
+                        const min = Math.min(...values);
+                        const max = Math.max(...values);
+
+                        rows.forEach(row => {
+                            const value = parseFloat(row.cells[columnIndex].textContent.trim());
+                            if (isNaN(value)) return;
+                            const hue = 120 * (1 - (value - min) / (max - min));
+                            row.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)';
+                        });
+                    }
+                }
+
                 function sortTable(columnIndex) {
                     const table = document.getElementById('questionsTable');
                     const tbody = table.querySelector('tbody');
@@ -181,64 +237,42 @@ function getWebviewContent(questions: Question[]): string {
                     const headers = table.querySelectorAll('th');
 
                     const direction = sortDirections[columnIndex] === 'asc' ? 'desc' : 'asc';
-                    sortDirections = new Array(headers.length).fill(null); // Reset other directions
+                    sortDirections = new Array(headers.length).fill(null);
                     sortDirections[columnIndex] = direction;
 
-                    // Special sort for PMG-X column (index 8)
-                    if (columnIndex === 8) {
-                        const pmgOrder = { 'W/H': 1, 'SA': 2, 'NA': 3 };
-                        rows.sort((a, b) => {
-                            const aText = a.cells[columnIndex].textContent.trim();
-                            const bText = b.cells[columnIndex].textContent.trim();
-
+                    rows.sort((a, b) => {
+                        const aText = a.cells[columnIndex].textContent.trim();
+                        const bText = b.cells[columnIndex].textContent.trim();
+                        
+                        if (columnIndex === 8) { // Special sort for PMG-X
+                            const pmgOrder = { 'W/H': 1, 'SA': 2, 'NA': 3 };
                             const isNumA = !isNaN(parseFloat(aText));
                             const isNumB = !isNaN(parseFloat(bText));
 
-                            if (isNumA && isNumB) {
-                                return parseFloat(aText) - parseFloat(bText);
-                            }
+                            if (isNumA && isNumB) return parseFloat(aText) - parseFloat(bText);
                             if (isNumA) return -1;
                             if (isNumB) return 1;
-                            
                             return (pmgOrder[aText] || 99) - (pmgOrder[bText] || 99);
-                        });
-
-                        if (direction === 'desc') {
-                            rows.reverse();
                         }
 
-                    } else {
-                        rows.sort((a, b) => {
-                            const aText = a.cells[columnIndex].textContent.trim();
-                            const bText = b.cells[columnIndex].textContent.trim();
-
-                            const aNum = parseFloat(aText);
-                            const bNum = parseFloat(bText);
-
-                            let valA, valB;
-
-                            if (!isNaN(aNum) && !isNaN(bNum)) {
-                                valA = aNum;
-                                valB = bNum;
-                            } else {
-                                valA = aText.toLowerCase();
-                                valB = bText.toLowerCase();
-                            }
-                            
-                            if (valA < valB) return -1;
-                            if (valA > valB) return 1;
-                            return 0;
-                        });
-
-                        if (direction === 'desc') {
-                            rows.reverse();
+                        const aNum = parseFloat(aText);
+                        const bNum = parseFloat(bText);
+                        if (!isNaN(aNum) && !isNaN(bNum)) {
+                            return aNum - bNum;
                         }
+                        
+                        return aText.toLowerCase().localeCompare(bText.toLowerCase());
+                    });
+
+                    if (direction === 'desc') {
+                        rows.reverse();
                     }
 
                     headers.forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
                     headers[columnIndex].classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
 
                     rows.forEach(row => tbody.appendChild(row));
+                    updateRowColors(columnIndex);
                 }
             </script>
         </body>
