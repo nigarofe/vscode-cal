@@ -35,11 +35,27 @@
 ├───eslint.config.mjs
 ├───features
 │   ├───export
+│   │   ├───design.md
+│   │   ├───requirements.md
+│   │   └───tasks.md
+│   ├───prompt.md
 │   ├───question-management
+│   │   ├───design.md
+│   │   ├───requirements.md
+│   │   └───tasks.md
 │   ├───README.md
 │   ├───recommendation
+│   │   ├───design.md
+│   │   ├───requirements.md
+│   │   └───tasks.md
 │   ├───render-question
+│   │   ├───design.md
+│   │   ├───requirements.md
+│   │   └───tasks.md
 │   └───validation-and-diagnostics
+│       ├───design.md
+│       ├───requirements.md
+│       └───tasks.md
 ├───images
 │   ├───diagram.png
 │   └───icon.svg
