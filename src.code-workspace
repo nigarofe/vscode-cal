@@ -1,15 +1,19 @@
 {
-	"folders": [
-		{
-			"name": "src",
-			"path": "src"
-		},
-		{
-			"name": "vscode-cal",
-			"path": "."
-		}
-	],
-	"settings": {
-		"typescript.tsc.autoDetect": "off"
-	}
+  "folders": [
+    {
+      "name": "src",
+      "path": "src"
+    },
+    {
+      "name": "features",
+      "path": "features"
+    },
+    {
+      "name": "vscode-cal",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "typescript.tsc.autoDetect": "off"
+  }
 }
