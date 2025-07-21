@@ -53,6 +53,10 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
           );
           break;
         }
+        case "showRankedQuestions": {
+            vscode.commands.executeCommand("vscode-cal.showRankedQuestions");
+            break;
+        }
       }
     });
   }

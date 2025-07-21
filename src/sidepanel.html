@@ -35,6 +35,11 @@
           <div class="button-container">
             <button id="register-attempt-with-help-button" class="secondary-yellow">Register attempt with help</button>
           </div>
+
+          <h2>Analytics</h2>
+          <div class="button-container">
+            <button id="show-ranked-questions-button" class="primary">Show Ranked Questions</button>
+          </div>
 				</div>
 
 				<script nonce="${nonce}">
@@ -46,6 +51,7 @@
                     const recommendQuestionButton = document.getElementById('recommend-question-button');
                     const registerAttemptWithoutHelpButton = document.getElementById('register-attempt-without-help-button');
                     const registerAttemptWithHelpButton = document.getElementById('register-attempt-with-help-button');
+                    const showRankedQuestionsButton = document.getElementById('show-ranked-questions-button');
 
                     openQuestionButton.addEventListener('click', () => {
                         vscode.postMessage({ type: 'openQuestion', value: input.value });
@@ -69,6 +75,10 @@
 
                     registerAttemptWithHelpButton.addEventListener('click', () => {
                         vscode.postMessage({ type: 'registerAttempt', value: 0 });
+                    });
+
+                    showRankedQuestionsButton.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'showRankedQuestions' });
                     });
 				</script>
 			</body>
