@@ -11,6 +11,9 @@
     {
       "name": "vscode-cal",
       "path": "."
+    },
+    {
+      "path": "merged"
     }
   ],
   "settings": {

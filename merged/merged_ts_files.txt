@@ -1,17 +1,422 @@
+# Project Folder Structure
 
-// =================================================================================
-// WARNING: This is an auto-generated file created by merge_ts_files.js
-//
-// This file is a concatenation of all .ts files found in the project.
-// It is intended for quick review or analysis, not for compilation, as it
-// does not resolve module dependencies, imports, or exports correctly.
-// Editing this file directly is not recommended.
-// =================================================================================
+├───.gemini
+│   ├───.env
+│   ├───api_keys.json
+│   ├───GEMINI.md
+│   └───rotate_keys.js
+├───.gitignore
+├───.vscode-test.mjs
+├───.vscodeignore
+├───CAL3
+│   ├───package.json
+│   └───src
+│       ├───client.ts
+│       ├───components
+│       │   ├───add-question-form.html
+│       │   ├───autohide-navbar.css
+│       │   ├───Book.svg
+│       │   ├───edit-question-form.html
+│       │   ├───main-header.html
+│       │   ├───Obsidian_logo.svg
+│       │   ├───questions-table-mini.html
+│       │   ├───questions-table.html
+│       │   ├───sticky-navbar.html
+│       │   └───toast.html
+│       ├───db.ts
+│       ├───db_sql_queries.ts
+│       ├───index.html
+│       ├───load_components.ts
+│       ├───rec_sys.ts
+│       ├───server.ts
+│       ├───server_get.ts
+│       └───server_post.ts
+├───CHANGELOG.md
+├───eslint.config.mjs
+├───features
+│   ├───attempt-tracking
+│   │   └───registerAttempt.feature
+│   ├───export
+│   │   ├───exportQuestions.feature
+│   │   └───exportQuestions.steps.ts
+│   ├───question-management
+│   │   ├───editQuestion.feature
+│   │   └───openQuestion.feature
+│   ├───render-question
+│   │   └───renderQuestion.feature
+│   └───validation-and-diagnostics
+│       └───fileDiagnostics.feature
+├───images
+│   ├───diagram.png
+│   └───icon.svg
+├───media
+│   ├───main.css
+│   ├───reset.css
+│   └───vscode.css
+├───package-lock.json
+├───package.json
+├───README.md
+├───src
+│   ├───.json
+│   │   ├───2025-07-17T16-01-21_461Z_questions.json
+│   │   └───question_schema.json
+│   ├───commands.ts
+│   ├───db.db
+│   ├───db.ts
+│   ├───db_sql_queries.ts
+│   ├───diagnostics.ts
+│   ├───extension.ts
+│   ├───Question.ts
+│   ├───sidepanelProvider.ts
+│   ├───test
+│   │   └───extension.test.ts
+│   └───webview.ts
+├───src.code-workspace
+├───tsconfig.json
+├───types
+│   └───markdown-it-katex.d.ts
+└───_misc
+    ├───01_user_workflows.md
+    ├───analytical_rubrics
+    │   ├───answers.json
+    │   └───questions.json
+    ├───flows_and_architectures
+    │   ├───01_system_overview.md
+    │   ├───02_learning_materials_architecture.md
+    │   ├───03_user_workflows.md
+    │   └───04_tagging_workflow.md
+    ├───learning_materials
+    │   ├───.obsidian
+    │   │   ├───app.json
+    │   │   ├───appearance.json
+    │   │   ├───community-plugins.json
+    │   │   ├───core-plugins.json
+    │   │   ├───hotkeys.json
+    │   │   ├───plugins
+    │   │   │   ├───creases
+    │   │   │   │   ├───main.js
+    │   │   │   │   ├───manifest.json
+    │   │   │   │   └───styles.css
+    │   │   │   ├───obsidian-latex-suite
+    │   │   │   │   ├───main.js
+    │   │   │   │   ├───manifest.json
+    │   │   │   │   └───styles.css
+    │   │   │   └───templater-obsidian
+    │   │   │       ├───data.json
+    │   │   │       ├───main.js
+    │   │   │       ├───manifest.json
+    │   │   │       └───styles.css
+    │   │   ├───templates.json
+    │   │   └───workspace.json
+    │   ├───premise-sets-md
+    │   │   ├───ps1.md
+    │   │   ├───ps10.md
+    │   │   ├───ps11.md
+    │   │   ├───ps12.md
+    │   │   ├───ps13.md
+    │   │   ├───ps14.md
+    │   │   ├───ps15.md
+    │   │   ├───ps16.md
+    │   │   ├───ps17.md
+    │   │   ├───ps18.md
+    │   │   ├───ps19.md
+    │   │   ├───ps2.md
+    │   │   ├───ps20.md
+    │   │   ├───ps21.md
+    │   │   ├───ps22.md
+    │   │   ├───ps23.md
+    │   │   ├───ps24.md
+    │   │   ├───ps25.md
+    │   │   ├───ps26.md
+    │   │   ├───ps27.md
+    │   │   ├───ps28.md
+    │   │   ├───ps29.md
+    │   │   ├───ps3.md
+    │   │   ├───ps30.md
+    │   │   ├───ps31.md
+    │   │   ├───ps32.md
+    │   │   ├───ps33.md
+    │   │   ├───ps34.md
+    │   │   ├───ps35.md
+    │   │   ├───ps4.md
+    │   │   ├───ps5.md
+    │   │   ├───ps6.md
+    │   │   ├───ps7.md
+    │   │   ├───ps8.md
+    │   │   ├───ps9.md
+    │   │   └───Summary.md
+    │   ├───premises-images
+    │   │   ├───ps11.png
+    │   │   ├───ps19.svg
+    │   │   ├───ps24-1.svg
+    │   │   ├───ps24-2.svg
+    │   │   ├───ps25-1.svg
+    │   │   ├───ps25-2.svg
+    │   │   ├───ps26-1.svg
+    │   │   ├───ps26-2.svg
+    │   │   ├───ps26-3.svg
+    │   │   ├───ps30-1.svg
+    │   │   ├───ps30-2.svg
+    │   │   ├───ps30-3.png
+    │   │   ├───ps30-4.png
+    │   │   └───ps4.png
+    │   ├───question-images
+    │   │   ├───pending
+    │   │   │   ├───latex-conversion
+    │   │   │   │   ├───Photos-1-001.zip
+    │   │   │   │   ├───q17.jpg
+    │   │   │   │   ├───q19-2.jpg
+    │   │   │   │   ├───q19.jpg
+    │   │   │   │   ├───q19.png
+    │   │   │   │   ├───q26.jpg
+    │   │   │   │   ├───q28.jpg
+    │   │   │   │   ├───q40.png
+    │   │   │   │   ├───q43.jpg
+    │   │   │   │   ├───q51.png
+    │   │   │   │   ├───q68.jpg
+    │   │   │   │   ├───q72 q73 q74 (2).jpg
+    │   │   │   │   ├───q72 q73 q74.jpg
+    │   │   │   │   ├───q75 q76 (2).jpg
+    │   │   │   │   ├───q75 q76.jpg
+    │   │   │   │   ├───q76.jpg
+    │   │   │   │   ├───q77 q78 (2).jpg
+    │   │   │   │   ├───q77 q78.jpg
+    │   │   │   │   ├───q77.jpg
+    │   │   │   │   ├───q87.jpg
+    │   │   │   │   ├───q88 matriz.png
+    │   │   │   │   ├───q88-2.jpg
+    │   │   │   │   ├───q88.jpg
+    │   │   │   │   ├───q9.jpg
+    │   │   │   │   ├───q90.jpg
+    │   │   │   │   ├───q91.jpg
+    │   │   │   │   ├───q95-2.jpg
+    │   │   │   │   ├───q95.jpg
+    │   │   │   │   └───q96.jpg
+    │   │   │   └───to-become-questions
+    │   │   │       ├───IMG_20250519_173343072_MP.jpg
+    │   │   │       ├───Screenshot_20250519-174306.png
+    │   │   │       └───Screenshot_20250519-174732.png
+    │   │   ├───q1.png
+    │   │   ├───q10.png
+    │   │   ├───q11.png
+    │   │   ├───q110.png
+    │   │   ├───q12.png
+    │   │   ├───q121.png
+    │   │   ├───q123.png
+    │   │   ├───q124.png
+    │   │   ├───q125.png
+    │   │   ├───q126.png
+    │   │   ├───q129.png
+    │   │   ├───q13.jpeg
+    │   │   ├───q130.png
+    │   │   ├───q16.png
+    │   │   ├───q17.png
+    │   │   ├───q18.png
+    │   │   ├───q2.jpg
+    │   │   ├───q24.jpg
+    │   │   ├───q25.jpg
+    │   │   ├───q26.jpg
+    │   │   ├───q27.jpg
+    │   │   ├───q28.png
+    │   │   ├───q29.png
+    │   │   ├───q3.png
+    │   │   ├───q30.png
+    │   │   ├───q31.png
+    │   │   ├───q34.png
+    │   │   ├───q35.png
+    │   │   ├───q39.png
+    │   │   ├───q4.png
+    │   │   ├───q40.png
+    │   │   ├───q41.png
+    │   │   ├───q42.png
+    │   │   ├───q43.png
+    │   │   ├───q44.png
+    │   │   ├───q45.png
+    │   │   ├───q46.png
+    │   │   ├───q47.png
+    │   │   ├───q48.png
+    │   │   ├───q49.png
+    │   │   ├───q5.jpg
+    │   │   ├───q50.png
+    │   │   ├───q51.png
+    │   │   ├───q52.jpg
+    │   │   ├───q53.jpg
+    │   │   ├───q54.jpg
+    │   │   ├───q55.jpg
+    │   │   ├───q56.jpg
+    │   │   ├───q57.jpg
+    │   │   ├───q58.jpg
+    │   │   ├───q59.jpg
+    │   │   ├───q60.png
+    │   │   ├───q61.png
+    │   │   ├───q62.png
+    │   │   ├───q63.png
+    │   │   ├───q64.png
+    │   │   ├───q65.png
+    │   │   ├───q68.jpg
+    │   │   ├───q7.jpg
+    │   │   ├───q8.png
+    │   │   ├───q88.png
+    │   │   ├───q9.jpg
+    │   │   ├───q91.png
+    │   │   ├───q96-2.png
+    │   │   └───q96.png
+    │   ├───questions-md
+    │   │   ├───q1.md
+    │   │   ├───q10.md
+    │   │   ├───q100.md
+    │   │   ├───q101.md
+    │   │   ├───q102.md
+    │   │   ├───q103.md
+    │   │   ├───q104.md
+    │   │   ├───q105.md
+    │   │   ├───q106.md
+    │   │   ├───q107.md
+    │   │   ├───q108.md
+    │   │   ├───q109.md
+    │   │   ├───q11.md
+    │   │   ├───q110.md
+    │   │   ├───q111.md
+    │   │   ├───q112.md
+    │   │   ├───q115.md
+    │   │   ├───q116.md
+    │   │   ├───q117.md
+    │   │   ├───q118.md
+    │   │   ├───q119.md
+    │   │   ├───q12.md
+    │   │   ├───q120.md
+    │   │   ├───q121.md
+    │   │   ├───q122.md
+    │   │   ├───q123.md
+    │   │   ├───q124.md
+    │   │   ├───q125.md
+    │   │   ├───q126.md
+    │   │   ├───q127.md
+    │   │   ├───q128.md
+    │   │   ├───q129.md
+    │   │   ├───q13.md
+    │   │   ├───q130.md
+    │   │   ├───q14.md
+    │   │   ├───q15.md
+    │   │   ├───q16.md
+    │   │   ├───q17.md
+    │   │   ├───q18.md
+    │   │   ├───q19.md
+    │   │   ├───q2.md
+    │   │   ├───q20.md
+    │   │   ├───q21.md
+    │   │   ├───q22.md
+    │   │   ├───q23.md
+    │   │   ├───q24.md
+    │   │   ├───q25.md
+    │   │   ├───q26.md
+    │   │   ├───q27.md
+    │   │   ├───q28.md
+    │   │   ├───q29.md
+    │   │   ├───q3.md
+    │   │   ├───q30.md
+    │   │   ├───q31.md
+    │   │   ├───q32.md
+    │   │   ├───q33.md
+    │   │   ├───q34.md
+    │   │   ├───q35.md
+    │   │   ├───q36.md
+    │   │   ├───q37.md
+    │   │   ├───q38.md
+    │   │   ├───q39.md
+    │   │   ├───q4.md
+    │   │   ├───q40.md
+    │   │   ├───q41.md
+    │   │   ├───q42.md
+    │   │   ├───q43.md
+    │   │   ├───q44.md
+    │   │   ├───q45.md
+    │   │   ├───q46.md
+    │   │   ├───q47.md
+    │   │   ├───q48.md
+    │   │   ├───q49.md
+    │   │   ├───q5.md
+    │   │   ├───q50.md
+    │   │   ├───q51.md
+    │   │   ├───q52.md
+    │   │   ├───q53.md
+    │   │   ├───q54.md
+    │   │   ├───q55.md
+    │   │   ├───q56.md
+    │   │   ├───q57.md
+    │   │   ├───q58.md
+    │   │   ├───q59.md
+    │   │   ├───q6.md
+    │   │   ├───q60.md
+    │   │   ├───q61.md
+    │   │   ├───q62.md
+    │   │   ├───q63.md
+    │   │   ├───q64.md
+    │   │   ├───q65.md
+    │   │   ├───q66.md
+    │   │   ├───q67.md
+    │   │   ├───q69.md
+    │   │   ├───q7.md
+    │   │   ├───q72.md
+    │   │   ├───q73.md
+    │   │   ├───q74.md
+    │   │   ├───q75.md
+    │   │   ├───q76.md
+    │   │   ├───q77.md
+    │   │   ├───q78.md
+    │   │   ├───q79.md
+    │   │   ├───q8.md
+    │   │   ├───q80.md
+    │   │   ├───q81.md
+    │   │   ├───q82.md
+    │   │   ├───q83.md
+    │   │   ├───q84.md
+    │   │   ├───q85.md
+    │   │   ├───q88.md
+    │   │   ├───q9.md
+    │   │   ├───q90.md
+    │   │   ├───q91.md
+    │   │   ├───q92.md
+    │   │   ├───q93.md
+    │   │   ├───q94.md
+    │   │   ├───q95.md
+    │   │   ├───q96.md
+    │   │   ├───q97.md
+    │   │   ├───q98.md
+    │   │   └───q99.md
+    │   └───templates
+    │       └───question_template.md
+    ├───learning_material_tagging
+    │   ├───llm_output.json
+    │   ├───llm_prompt.md
+    │   ├───merged_materials.json
+    │   └───merge_md_files.js
+    ├───learning_theory
+    │   ├───mnemonic_systems
+    │   │   ├───dominic 2.txt
+    │   │   ├───Dominic.png
+    │   │   └───number-initial-name-action.ods
+    │   └───Repetição espaçada e rastreabilidade.md
+    ├───migration to db
+    │   ├───gemini_system_prompt.md
+    │   └───migration_sql.md
+    ├───project_ideas
+    │   ├───Ideas.md
+    │   ├───Scroll Screenshot.png
+    │   └───SoftMetrics.md
+    ├───prompt_frameworks
+    │   ├───Instructional_Design_Engine_v3.0.json
+    │   ├───Interacoes_conteudo.json
+    │   ├───Interface_Implementations.json
+    │   └───Text_Generation.json
+    ├───README.md
+    ├───vscode_cal.feature
+    └───_changelog.md
 
 
-// ==========================================================================
-// START OF: ..\commands.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/commands.ts
+// =================================================================================================
 
 import * as vscode from "vscode";
 import * as path from "path";
@@ -291,13 +696,9 @@ export function registerCommands(context: vscode.ExtensionContext) {
 }
 
 
-// ==========================================================================
-// END OF: ..\commands.ts
-// ==========================================================================
-
-// ==========================================================================
-// START OF: ..\db.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/db.ts
+// =================================================================================================
 
 import * as sqlite3 from "sqlite3";
 import * as path from "path";
@@ -463,13 +864,9 @@ export async function registerAttempt(questionNumber: number, code: number) {
 }
 
 
-// ==========================================================================
-// END OF: ..\db.ts
-// ==========================================================================
-
-// ==========================================================================
-// START OF: ..\db_sql_queries.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/db_sql_queries.ts
+// =================================================================================================
 
 export const GET_QUESTIONS_SQL = `
     SELECT
@@ -521,13 +918,9 @@ export const CREATE_TABLES_SQL = `
     );
 `;
 
-// ==========================================================================
-// END OF: ..\db_sql_queries.ts
-// ==========================================================================
-
-// ==========================================================================
-// START OF: ..\diagnostics.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/diagnostics.ts
+// =================================================================================================
 
 import * as vscode from "vscode";
 import matter from "gray-matter";
@@ -628,13 +1021,9 @@ export function updateDiagnostics(document: vscode.TextDocument) {
 }
 
 
-// ==========================================================================
-// END OF: ..\diagnostics.ts
-// ==========================================================================
-
-// ==========================================================================
-// START OF: ..\extension.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/extension.ts
+// =================================================================================================
 
 import * as vscode from "vscode";
 import { registerCommands } from "./commands";
@@ -664,13 +1053,9 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 
-// ==========================================================================
-// END OF: ..\extension.ts
-// ==========================================================================
-
-// ==========================================================================
-// START OF: ..\Question.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/Question.ts
+// =================================================================================================
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const STATUS_NA = "NA";
@@ -796,13 +1181,9 @@ export class Question {
 }
 
 
-// ==========================================================================
-// END OF: ..\Question.ts
-// ==========================================================================
-
-// ==========================================================================
-// START OF: ..\sidepanelProvider.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/sidepanelProvider.ts
+// =================================================================================================
 
 import * as vscode from "vscode";
 
@@ -963,13 +1344,30 @@ function getNonce() {
 }
 
 
-// ==========================================================================
-// END OF: ..\sidepanelProvider.ts
-// ==========================================================================
+// =================================================================================================
+// FILE: src/test/extension.test.ts
+// =================================================================================================
 
-// ==========================================================================
-// START OF: ..\webview.ts
-// ==========================================================================
+import * as assert from 'assert';
+
+// You can import and use all API from the 'vscode' module
+// as well as import your extension to test it
+import * as vscode from 'vscode';
+// import * as myExtension from '../../extension';
+
+suite('Extension Test Suite', () => {
+	vscode.window.showInformationMessage('Start all tests.');
+
+	test('Sample test', () => {
+		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
+		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+	});
+});
+
+
+// =================================================================================================
+// FILE: src/webview.ts
+// =================================================================================================
 
 import * as vscode from "vscode";
 import matter from "gray-matter";
@@ -1092,9 +1490,4 @@ export function getWebviewContent(
     </html>
   `;
 }
-
-
-// ==========================================================================
-// END OF: ..\webview.ts
-// ==========================================================================
 
