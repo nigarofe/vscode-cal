@@ -239,34 +239,40 @@ function getWebviewContent(questions: Question[]): string {
                     const direction = sortDirections[columnIndex] === 'asc' ? 'desc' : 'asc';
                     sortDirections = new Array(headers.length).fill(null);
                     sortDirections[columnIndex] = direction;
+                    const directionMultiplier = direction === 'asc' ? 1 : -1;
 
                     rows.sort((a, b) => {
                         const aText = a.cells[columnIndex].textContent.trim();
                         const bText = b.cells[columnIndex].textContent.trim();
-                        
-                        if (columnIndex === 8) { // Special sort for PMG-X
-                            const pmgOrder = { 'W/H': 1, 'SA': 2, 'NA': 3 };
-                            const isNumA = !isNaN(parseFloat(aText));
-                            const isNumB = !isNaN(parseFloat(bText));
-
-                            if (isNumA && isNumB) return parseFloat(aText) - parseFloat(bText);
-                            if (isNumA) return -1;
-                            if (isNumB) return 1;
-                            return (pmgOrder[aText] || 99) - (pmgOrder[bText] || 99);
-                        }
 
                         const aNum = parseFloat(aText);
                         const bNum = parseFloat(bText);
-                        if (!isNaN(aNum) && !isNaN(bNum)) {
-                            return aNum - bNum;
-                        }
-                        
-                        return aText.toLowerCase().localeCompare(bText.toLowerCase());
-                    });
+                        const isNumA = !isNaN(aNum);
+                        const isNumB = !isNaN(bNum);
 
-                    if (direction === 'desc') {
-                        rows.reverse();
-                    }
+                        // Grouping logic: numbers always come before strings
+                        if (isNumA && !isNumB) {
+                            return -1;
+                        }
+                        if (!isNumA && isNumB) {
+                            return 1;
+                        }
+
+                        // At this point, both are numbers or both are strings.
+                        // Sort within the group based on type.
+                        if (isNumA) { // Both are numbers
+                            return (aNum - bNum) * directionMultiplier;
+                        } else { // Both are strings
+                            if (columnIndex === 8) { // Special string sort for PMG-X
+                                const pmgOrder = { 'W/H': 1, 'SA': 2, 'NA': 3 };
+                                const aVal = pmgOrder[aText] || 99;
+                                const bVal = pmgOrder[bText] || 99;
+                                return (aVal - bVal) * directionMultiplier;
+                            }
+                            // Standard string sort for other columns
+                            return aText.toLowerCase().localeCompare(bText.toLowerCase()) * directionMultiplier;
+                        }
+                    });
 
                     headers.forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
                     headers[columnIndex].classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
