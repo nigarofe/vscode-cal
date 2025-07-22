@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { saveQuestion } from "../db";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
+import { Question } from "../Question";
 
 export function saveQuestionCommand() {
     return vscode.commands.registerCommand(
@@ -19,7 +20,14 @@ export function saveQuestionCommand() {
                 );
                 return;
             }
-            saveQuestion(doc);
+            const text = doc.getText();
+            const questionData = Question.parseFromText(text);
+            const errors = Question.validate(questionData);
+            if (errors.length > 0) {
+                vscode.window.showErrorMessage(`Could not save: ${errors.join(" ")}`);
+                return;
+            }
+            saveQuestion(questionData);
         }
     );
 }

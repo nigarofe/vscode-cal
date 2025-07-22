@@ -7,7 +7,6 @@ import {
 } from "./db_sql_queries";
 import { Question } from "./Question";
 import * as vscode from "vscode";
-import matter from "gray-matter";
 
 const dbPath = path.resolve(__dirname, "../src/db.db");
 
@@ -48,31 +47,7 @@ export async function buildAllQuestions(): Promise<Question[]> {
   });
 }
 
-export async function saveQuestion(document: vscode.TextDocument) {
-  const text = document.getText();
-  const questionData = Question.parseFromText(text);
-
-  if (questionData.question_number === -1) {
-    vscode.window.showErrorMessage(
-      "Could not save: Question number not found in the document."
-    );
-    return;
-  }
-
-  if (!questionData.proposition) {
-    vscode.window.showErrorMessage(
-      "Could not save: '## Proposition' section not found."
-    );
-    return;
-  }
-
-  if (!questionData.answer) {
-    vscode.window.showErrorMessage(
-      "Could not save: '## Answer' section not found."
-    );
-    return;
-  }
-
+export async function saveQuestion(questionData: Partial<Question>) {
   const dbPath = path.join(
     vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
     "src",

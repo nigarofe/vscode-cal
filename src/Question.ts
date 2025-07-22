@@ -171,4 +171,18 @@ ${this.answer}
       answer,
     };
   }
+
+  static validate(questionData: Partial<Question>): string[] {
+    const errors: string[] = [];
+    if (questionData.question_number === -1) {
+      errors.push("Question number not found in the document.");
+    }
+    if (!questionData.proposition) {
+      errors.push("'## Proposition' section not found.");
+    }
+    if (!questionData.answer) {
+      errors.push("'## Answer' section not found.");
+    }
+    return errors;
+  }
 }
