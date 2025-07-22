@@ -108,4 +108,25 @@ export class Question {
   private calculateAttemptsSummary(code_vector: number[]) {
     return `${this.attemptsWithoutHelp + this.attemptsWithHelp}; ${this.attemptsWithoutHelp}; ${this.attemptsWithHelp}`;
   }
+
+  public generateContentFromQuestion(): string {
+    return `---
+discipline: ${JSON.stringify(this.discipline)}
+description: ${JSON.stringify(this.description)}
+source: ${JSON.stringify(this.source)}
+tags: ${JSON.stringify(this.tags)}
+---
+
+# Question ${this.question_number}
+
+## Proposition
+${this.proposition}
+
+## Step-by-step
+${this.step_by_step || ""}
+
+## Answer
+${this.answer}
+`;
+  }
 }

@@ -1,27 +1,5 @@
 import * as vscode from 'vscode';
 import { buildAllQuestions } from './db';
-import { Question } from './Question';
-
-function generateContentForQuestion(question: Question) {
-    return `---
-discipline: ${JSON.stringify(question.discipline)}
-description: ${JSON.stringify(question.description)}
-source: ${JSON.stringify(question.source)}
-tags: ${JSON.stringify(question.tags)}
----
-
-# Question ${question.question_number}
-
-## Proposition
-${question.proposition}
-
-## Step-by-step
-${question.step_by_step || ""}
-
-## Answer
-${question.answer}
-`;
-}
 
 export class QuestionContentProvider implements vscode.TextDocumentContentProvider {
     private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
@@ -40,7 +18,7 @@ export class QuestionContentProvider implements vscode.TextDocumentContentProvid
             return `Error: Question number ${questionNumber} not found.`;
         }
 
-        return generateContentForQuestion(question);
+        return question.generateContentFromQuestion();
     }
 
     public update(uri: vscode.Uri) {
