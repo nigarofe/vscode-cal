@@ -35,9 +35,11 @@ export class Question {
     this.proposition = dbData.proposition;
     this.step_by_step = dbData.step_by_step;
     this.answer = dbData.answer;
-    this.tags = dbData.tags
-      ? dbData.tags.split(",").map((tag: string) => tag.trim())
-      : [];
+    this.tags = Array.isArray(dbData.tags)
+      ? dbData.tags
+      : dbData.tags
+        ? dbData.tags.split(",").map((tag: string) => tag.trim())
+                : [];
 
 
     const codeVec: number[] = JSON.parse(dbData.code_vec_json);
@@ -112,11 +114,12 @@ export class Question {
   }
 
   public generateContentFromQuestion(): string {
+    const tags = Array.isArray(this.tags) ? JSON.stringify(this.tags) : this.tags;
     return `---
 discipline: ${JSON.stringify(this.discipline)}
 description: ${JSON.stringify(this.description)}
 source: ${JSON.stringify(this.source)}
-tags: ${JSON.stringify(this.tags)}
+tags: ${tags}
 ---
 
 # Question ${this.question_number}

@@ -6,7 +6,6 @@ export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.exportQuestionsJson",
         async () => {
-            const dbPath = path.join(context.extensionPath, "src", "db.db");
             try {
                 const questions = await buildAllQuestions();
                 const questionsForJson = questions.map((q) => ({

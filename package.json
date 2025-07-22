@@ -15,6 +15,13 @@
     "onView:cal-question-view"
   ],
   "contributes": {
+    "keybindings": [
+      {
+        "command": "vscode-cal.saveQuestion",
+        "key": "ctrl+s",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
+      }
+    ],
     "commands": [
       {
         "command": "vscode-cal.exportQuestionsJson",
@@ -43,6 +50,10 @@
       {
         "command": "vscode-cal.createQuestion",
         "title": "Create Question"
+      },
+      {
+        "command": "vscode-cal.saveQuestion",
+        "title": "Save Question"
       }
     ],
     "menus": {
