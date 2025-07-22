@@ -47,7 +47,7 @@ export async function buildAllQuestions(): Promise<Question[]> {
   });
 }
 
-export async function saveQuestion(questionData: Partial<Question>) {
+export async function saveQuestion(question: Question) {
   const dbPath = path.join(
     vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
     "src",
@@ -58,14 +58,14 @@ export async function saveQuestion(questionData: Partial<Question>) {
   db.run(
     UPDATE_QUESTION_SQL,
     [
-      questionData.discipline,
-      questionData.source,
-      questionData.description,
-      questionData.proposition,
-      questionData.step_by_step,
-      questionData.answer,
-      questionData.tags ? questionData.tags.join(", ") : "",
-      questionData.question_number,
+      question.discipline,
+      question.source,
+      question.description,
+      question.proposition,
+      question.step_by_step,
+      question.answer,
+      question.tags.join(", "),
+      question.question_number,
     ],
     function (err) {
       if (err) {
@@ -74,7 +74,7 @@ export async function saveQuestion(questionData: Partial<Question>) {
         );
       } else {
         vscode.window.showInformationMessage(
-          `Question ${questionData.question_number} updated successfully.`
+          `Question ${question.question_number} updated successfully.`
         );
       }
     }

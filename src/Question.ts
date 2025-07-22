@@ -132,7 +132,7 @@ ${this.answer}
 `;
   }
 
-  static parseFromText(text: string): Partial<Question> {
+  static _parseFromText(text: string): Partial<Question> {
     const parsed = matter(text);
     const content = parsed.content;
 
@@ -172,7 +172,24 @@ ${this.answer}
     };
   }
 
-  static validate(questionData: Partial<Question>): string[] {
+  static fromText(text: string): Question {
+    const parsedData = Question._parseFromText(text);
+    const dbData = {
+      question_number: parsedData.question_number,
+      discipline: parsedData.discipline,
+      source: parsedData.source,
+      description: parsedData.description,
+      proposition: parsedData.proposition,
+      step_by_step: parsedData.step_by_step,
+      answer: parsedData.answer,
+      tags: parsedData.tags ? (parsedData.tags as string[]).join(", ") : "",
+      code_vec_json: '[]',
+      date_vec_json: '[]'
+    };
+    return new Question(dbData);
+  }
+
+  static validate(questionData: Question): string[] {
     const errors: string[] = [];
     if (questionData.question_number === -1) {
       errors.push("Question number not found in the document.");

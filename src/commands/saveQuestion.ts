@@ -21,7 +21,7 @@ export function saveQuestionCommand() {
                 return;
             }
             const text = doc.getText();
-            const questionData = Question.parseFromText(text);
+            const questionData = Question.fromText(text);
             const errors = Question.validate(questionData);
             if (errors.length > 0) {
                 vscode.window.showErrorMessage(`Could not save: ${errors.join(" ")}`);
