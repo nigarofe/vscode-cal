@@ -7,7 +7,7 @@ export function showRankedQuestionsCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand('vscode-cal.showRankedQuestions', () => {
         const dbPath = path.resolve(__dirname, "../../src/db.db");
 
-        buildAllQuestions(dbPath).then(questions => {
+        buildAllQuestions().then(questions => {
             // Filter out questions where potentialMemoryGainMultiplier is not a number
             // const sortedQuestions = questions.filter(q => typeof q.potentialMemoryGainMultiplier === 'number');
             const sortedQuestions = questions;

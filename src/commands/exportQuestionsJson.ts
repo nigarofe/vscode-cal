@@ -8,7 +8,7 @@ export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
         async () => {
             const dbPath = path.join(context.extensionPath, "src", "db.db");
             try {
-                const questions = await buildAllQuestions(dbPath);
+                const questions = await buildAllQuestions();
                 const questionsForJson = questions.map((q) => ({
                     number: q.question_number,
                     discipline: q.discipline,

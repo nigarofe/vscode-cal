@@ -104,27 +104,21 @@ Your task is to refactor a set of requirements.md files to conform to a structur
 ## **(Generic)**
 
 ## **(Ubiquitous)**
-* The system shall open a new markdown editor when the "openQuestionByNumber" command is run with an existing question number.
 
 ## **(State driven)**
 
 ## **(Event driven)**
-* When a user runs the "openQuestionByNumber" command and enters "7", the system shall open a new markdown editor.
-* When the editor for question 7 is opened, the system shall ensure the editor content starts with "# Question 7".
-* When the editor for question 7 is opened, the system shall ensure the editor content contains the correct front matter, including "discipline", "description", "source", and "tags".
-* When the editor for question 7 is opened, the system shall ensure the editor content contains the "## Proposition", "## Step-by-step", and "## Answer" sections.
+* When a user runs the "openQuestionByNumber" command and enters a question number, the system shall open a new markdown editor.
 
 ## **(Optional feature)**
 
 ## **(Unwanted behaviour)**
-* If the "openQuestionByNumber" command is run with a non-existent question number "999", then the system shall show an error message "Question number 999 not found.".
-* If the "openQuestionByNumber" command is run with an invalid input like "abc", then the system shall show an error message "Please enter a valid number.".
-* If the "saveQuestion" command is run after removing the "## Proposition" heading from the question's content, then the system shall show an error message "Cannot save, please fix the errors first.".
+* If the "openQuestionByNumber" command is run with a non-existent question number, then the system shall show an error message "Question {non_existent_question_number} does not exist.".
+* If the "openQuestionByNumber" command is run with an invalid input like, then the system shall show an error message "Please enter a valid number.".
 * If the "saveQuestion" command is run with invalid content, then the system shall not update the database.
 
 ## **(Complex)**
-* While a user has question number 7 open in the editor, when the user modifies the "description" in the front matter and runs the "saveQuestion" command, the system shall update the database with the new description for question 7.
-* While a user has question number 7 open in the editor, when the "saveQuestion" command is successfully run, the system shall display a success message "Question 7 updated successfully.".
+* While a user has a valid question open in the editor, when the user runs the "saveQuestion" command, the system shall update the question in the satabase and display a success message "Question {question_number} updated successfully.".
 
 // =================================================================================================
 // FILE: features/question-management/tasks.md
@@ -136,7 +130,32 @@ Your task is to refactor a set of requirements.md files to conform to a structur
 // FILE: features/README.md
 // =================================================================================================
 
-# Mandatory EARS Headings for `requirements.md`
+# Features
+
+This directory contains the feature definitions for the VS Code extension. Each feature is described in a dedicated subdirectory, which includes a `requirements.md` file outlining the feature's behavior. These requirements are used for acceptance testing and to ensure that the software meets the specified functionality.
+
+## Feature Overview
+
+The extension is composed of the following features:
+
+*   **[Question Management](./question-management/)**: Handles the creation, retrieval, and updating of questions. This includes opening questions in the editor, saving changes to the database, and managing the content of question files.
+*   **[Render Question](./render-question/)**: Responsible for previewing questions in a webview panel. It renders the question's content, including Markdown, LaTeX, and images, into HTML.
+*   **[Validation and Diagnostics](./validation-and-diagnostics/)**: Provides real-time validation of question files. It checks for errors in the front matter and Markdown body, and displays diagnostic information in the editor.
+*   **[Export](./export/)**: Allows for the exporting of questions from the database into a JSON file. This is useful for backups, sharing, or external processing.
+*   **[Recommendation](./recommendation/)**: Implements a spaced repetition-based question recommendation system. It suggests questions for review based on their potential memory gain and provides a view of all questions sorted by this metric.
+
+## Implementation Order
+
+It is recommended that the features be implemented and maintained in the following order to ensure a logical development progression:
+
+1.  **Question Management**
+2.  **Render Question**
+3.  **Validation and Diagnostics**
+4.  **Export**
+5.  **Recommendation**
+
+<details>
+<summary>Writing Feature Requirements (EARS)</summary>
 
 To ensure clarity and consistency, each `requirements.md` file must contain dedicated sections for the following EARS (Easy Approach to Requirements Syntax) patterns. This explicitly defines which patterns are being used for the system's requirements.
 
@@ -171,26 +190,8 @@ If `<trigger>`, then the `<system name>` shall `<system response>`
 ## **(Complex)**
 While `<precondition(s)>`, when `<trigger>`, the `<system name>` shall `<system response>`
 
+</details>
 
-
-# Implementation order
-This directory contains the feature files that define the behavior of the VS Code extension. These files are used for acceptance testing and to ensure that the software meets the specified requirements. The behavior of each feature is formally defined in the requirements.md files located in their respective subdirectories.
-
-├───export
-├───question-management
-├───recommendation
-├───render-question
-└───validation-and-diagnostics
-
-It's recommended that the software be implemented and maintained in the following order:
-
-1. question-management/openQuestion.feature
-2. question-management/editQuestion.feature
-3. render-question/renderQuestion.
-4. validation-and-diagnostics/fileDiagnostics.feature
-5. export/exportQuestions.feature
-6. recommendation/questionRecommendation.feature
-7. recommendation/registerAttempt.feature
 
 // =================================================================================================
 // FILE: features/recommendation/design.md
@@ -298,6 +299,7 @@ It's recommended that the software be implemented and maintained in the followin
   * When a user opens a question file, the system shall run diagnostics and display any errors found.
   * When a user saves a question file, the system shall run diagnostics and display any errors found.
   * When a user changes the content of a question file, the system shall run diagnostics and display any errors found.
+  * When the editor for question `{question_number}` is opened, the system shall ensure the editor content contains the "## Proposition", "## Step-by-step", and "## Answer" sections.
 
 ## **(Optional feature)**
 

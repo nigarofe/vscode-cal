@@ -28,7 +28,7 @@ export function initializeDatabase() {
   return db;
 }
 
-export async function buildAllQuestions(dbPath: string): Promise<Question[]> {
+export async function buildAllQuestions(): Promise<Question[]> {
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
       if (err) {

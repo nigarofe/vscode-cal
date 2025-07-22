@@ -1,69 +1,68 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { buildAllQuestions } from "../db";
+import { Question } from "../Question";
 import { updateDiagnostics } from "../diagnostics";
 
 export function openQuestionByNumberCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.openQuestionByNumber",
         async (questionNumber?: number) => {
-            let questionNumberStr: string | undefined;
-
             if (questionNumber === undefined) {
-                questionNumberStr = await vscode.window.showInputBox({
-                    prompt: "Enter the question number",
-                    placeHolder: "e.g., 1",
-                    validateInput: (text) => {
-                        return /^\d+$/.test(text) ? null : "Please enter a valid number.";
-                    },
-                });
-            } else {
-                questionNumberStr = questionNumber.toString();
+                questionNumber = await askForQuestionNumber();
             }
 
-            if (questionNumberStr) {
-                const questionNumber = parseInt(questionNumberStr, 10);
-                const dbPath = path.join(context.extensionPath, "src", "db.db");
-                try {
-                    const questions = await buildAllQuestions(dbPath);
-                    const question = questions.find(
-                        (q) => q.question_number === questionNumber
-                    );
+            const questions = await buildAllQuestions();
+            const question = questions.find(
+                (q) => q.question_number === questionNumber
+            );
 
-                    if (question) {
-                        const frontMatter = {
-                            discipline: question.discipline,
-                            description: question.description,
-                            source: question.source,
-                            tags: question.tags,
-                        };
-
-                        const content =
-                            `---\n` +
-                            `${Object.entries(frontMatter)
-                                .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-                                .join("\n")}\n` +
-                            `---\n\n` +
-                            `# Question ${question.question_number}\n\n` +
-                            `## Proposition\n${question.proposition}\n\n` +
-                            `## Step-by-step\n${question.step_by_step || ""}\n\n` +
-                            `## Answer\n${question.answer}\n\n`;
-
-                        const doc = await vscode.workspace.openTextDocument({
-                            content: content,
-                            language: "markdown",
-                        });
-                        await vscode.window.showTextDocument(doc);
-                        updateDiagnostics(doc);
-                    } else {
-                        vscode.window.showErrorMessage(
-                            `Question number ${questionNumber} not found.`
-                        );
-                    }
-                } catch (error: any) {
-                    vscode.window.showErrorMessage(error.message);
-                }
+            if (!question) {
+                vscode.window.showErrorMessage(
+                    `Question number ${questionNumber} not found.`
+                );
+                return;
             }
+
+            const doc = await vscode.workspace.openTextDocument({
+                content: generateContentForQuestion(question),
+                language: "markdown",
+            });
+            await vscode.window.showTextDocument(doc);
+            updateDiagnostics(doc);
         }
     );
+}
+
+async function askForQuestionNumber() {
+    const questionNumberStr = await vscode.window.showInputBox({
+        prompt: "Enter the question number",
+        placeHolder: "e.g., 1",
+        validateInput: (text) => {
+            return /^\d+$/.test(text) ? null : "Please enter a valid number.";
+        },
+    });
+    return parseInt(questionNumberStr || "");
+}
+
+
+function generateContentForQuestion(question: Question) {
+    return `---
+discipline: ${JSON.stringify(question.discipline)}
+description: ${JSON.stringify(question.description)}
+source: ${JSON.stringify(question.source)}
+tags: ${JSON.stringify(question.tags)}
+---
+
+# Question ${question.question_number}
+
+## Proposition
+${question.proposition}
+
+## Step-by-step
+${question.step_by_step || ""}
+
+## Answer
+${question.answer}
+`;
 }

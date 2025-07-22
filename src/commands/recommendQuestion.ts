@@ -9,7 +9,7 @@ export function recommendQuestionCommand(context: vscode.ExtensionContext) {
     async () => {
       const dbPath = path.join(context.extensionPath, "src", "db.db");
       try {
-        const questions = await buildAllQuestions(dbPath);
+        const questions = await buildAllQuestions();
         let recommendedQuestion: Question | null = null;
         let maxMultiplier = -1;
 
