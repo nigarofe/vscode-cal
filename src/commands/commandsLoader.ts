@@ -12,7 +12,7 @@ import { showRankedQuestionsCommand } from "./showRankedQuestions";
 export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(createQuestionCommand(context));
     context.subscriptions.push(exportQuestionsJsonCommand(context));
-    context.subscriptions.push(openQuestionByNumberCommand(context));
+    context.subscriptions.push(openQuestionByNumberCommand());
     context.subscriptions.push(previewQuestionCommand(context));
     context.subscriptions.push(saveQuestionCommand());
     context.subscriptions.push(registerAttemptCommand());

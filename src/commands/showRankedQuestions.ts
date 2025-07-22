@@ -5,7 +5,6 @@ import * as path from "path";
 
 export function showRankedQuestionsCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand('vscode-cal.showRankedQuestions', () => {
-        const dbPath = path.resolve(__dirname, "../../src/db.db");
 
         buildAllQuestions().then(questions => {
             // Filter out questions where potentialMemoryGainMultiplier is not a number

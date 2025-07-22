@@ -7,7 +7,6 @@ export function recommendQuestionCommand(context: vscode.ExtensionContext) {
   return vscode.commands.registerCommand(
     "vscode-cal.recommendQuestion",
     async () => {
-      const dbPath = path.join(context.extensionPath, "src", "db.db");
       try {
         const questions = await buildAllQuestions();
         let recommendedQuestion: Question | null = null;

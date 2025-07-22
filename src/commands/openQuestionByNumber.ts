@@ -1,10 +1,9 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import { buildAllQuestions } from "../db";
 import { Question } from "../Question";
 import { updateDiagnostics } from "../diagnostics";
 
-export function openQuestionByNumberCommand(context: vscode.ExtensionContext) {
+export function openQuestionByNumberCommand() {
     return vscode.commands.registerCommand(
         "vscode-cal.openQuestionByNumber",
         async (questionNumber?: number) => {
