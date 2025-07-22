@@ -1,6 +1,4 @@
 import * as vscode from "vscode";
-import { buildAllQuestions } from "../db";
-import { Question } from "../Question";
 import { updateDiagnostics } from "../diagnostics";
 
 export function openQuestionByNumberCommand() {
@@ -11,29 +9,19 @@ export function openQuestionByNumberCommand() {
                 questionNumber = await askForQuestionNumber();
             }
 
-            const questions = await buildAllQuestions();
-            const question = questions.find(
-                (q) => q.question_number === questionNumber
-            );
-
-            if (!question) {
-                vscode.window.showErrorMessage(
-                    `Question number ${questionNumber} not found.`
-                );
+            if (isNaN(questionNumber)) {
                 return;
             }
 
-            const doc = await vscode.workspace.openTextDocument({
-                content: generateContentForQuestion(question),
-                language: "markdown",
-            });
-            await vscode.window.showTextDocument(doc);
+            const uri = vscode.Uri.parse(`vscode-cal:Question ${questionNumber}.md`);
+            const doc = await vscode.workspace.openTextDocument(uri);
+            await vscode.window.showTextDocument(doc, { preview: true });
             updateDiagnostics(doc);
         }
     );
 }
 
-async function askForQuestionNumber() {
+async function askForQuestionNumber(): Promise<number> {
     const questionNumberStr = await vscode.window.showInputBox({
         prompt: "Enter the question number",
         placeHolder: "e.g., 1",
@@ -42,26 +30,4 @@ async function askForQuestionNumber() {
         },
     });
     return parseInt(questionNumberStr || "");
-}
-
-
-function generateContentForQuestion(question: Question) {
-    return `---
-discipline: ${JSON.stringify(question.discipline)}
-description: ${JSON.stringify(question.description)}
-source: ${JSON.stringify(question.source)}
-tags: ${JSON.stringify(question.tags)}
----
-
-# Question ${question.question_number}
-
-## Proposition
-${question.proposition}
-
-## Step-by-step
-${question.step_by_step || ""}
-
-## Answer
-${question.answer}
-`;
 }
