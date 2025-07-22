@@ -4,7 +4,8 @@
 │   ├───.env
 │   ├───api_keys.json
 │   ├───GEMINI.md
-│   └───rotate_keys.js
+│   ├───rotate_keys.js
+│   └───run_rotate_keys.bat
 ├───.gitignore
 ├───.vscode-test.mjs
 ├───.vscodeignore
@@ -23,12 +24,9 @@
 │       │   ├───questions-table.html
 │       │   ├───sticky-navbar.html
 │       │   └───toast.html
-│       ├───db.ts
-│       ├───db_sql_queries.ts
 │       ├───index.html
 │       ├───load_components.ts
 │       ├───rec_sys.ts
-│       ├───server.ts
 │       ├───server_get.ts
 │       └───server_post.ts
 ├───CHANGELOG.md
@@ -70,17 +68,30 @@
 ├───src
 │   ├───.json
 │   │   ├───2025-07-17T16-01-21_461Z_questions.json
+│   │   ├───2025-07-21T17-46-29_121Z_questions.json
 │   │   └───question_schema.json
-│   ├───commands.ts
+│   ├───commands
+│   │   ├───commandsLoader.ts
+│   │   ├───createQuestion.ts
+│   │   ├───exportQuestionsJson.ts
+│   │   ├───onDidChangeTextDocument.ts
+│   │   ├───openQuestionByNumber.ts
+│   │   ├───previewQuestion.ts
+│   │   ├───recommendQuestion.ts
+│   │   ├───registerAttempt.ts
+│   │   ├───saveQuestion.ts
+│   │   └───showRankedQuestions.ts
 │   ├───db.db
 │   ├───db.ts
 │   ├───db_sql_queries.ts
 │   ├───diagnostics.ts
 │   ├───extension.ts
 │   ├───Question.ts
+│   ├───sidepanel.html
 │   ├───sidepanelProvider.ts
 │   ├───test
-│   │   └───extension.test.ts
+│   │   ├───extension.test.ts
+│   │   └───question-management.test.ts
 │   └───webview.ts
 ├───src.code-workspace
 ├───tsconfig.json
@@ -425,284 +436,784 @@
 
 
 // =================================================================================================
-// FILE: src/commands.ts
+// FILE: src/commands/commandsLoader.ts
+// =================================================================================================
+
+import * as vscode from "vscode";
+import { createQuestionCommand } from "./createQuestion";
+import { exportQuestionsJsonCommand } from "./exportQuestionsJson";
+import { openQuestionByNumberCommand } from "./openQuestionByNumber";
+import { previewQuestionCommand } from "./previewQuestion";
+import { saveQuestionCommand } from "./saveQuestion";
+import { registerAttemptCommand } from "./registerAttempt";
+import { onDidChangeTextDocument } from "./onDidChangeTextDocument";
+import { recommendQuestionCommand } from "./recommendQuestion";
+import { showRankedQuestionsCommand } from "./showRankedQuestions";
+
+export function registerCommands(context: vscode.ExtensionContext) {
+    context.subscriptions.push(createQuestionCommand(context));
+    context.subscriptions.push(exportQuestionsJsonCommand(context));
+    context.subscriptions.push(openQuestionByNumberCommand(context));
+    context.subscriptions.push(previewQuestionCommand(context));
+    context.subscriptions.push(saveQuestionCommand());
+    context.subscriptions.push(registerAttemptCommand());
+    context.subscriptions.push(recommendQuestionCommand(context));
+    context.subscriptions.push(showRankedQuestionsCommand(context));
+    onDidChangeTextDocument(context);
+}
+
+
+// =================================================================================================
+// FILE: src/commands/createQuestion.ts
+// =================================================================================================
+
+import * as vscode from "vscode";
+import * as sqlite3 from "sqlite3";
+import * as path from "path";
+import { CREATE_QUESTION_SQL, GET_MAX_QUESTION_NUMBER_SQL } from "../db_sql_queries";
+
+export function createQuestionCommand(context: vscode.ExtensionContext) {
+    const command = vscode.commands.registerCommand('vscode-cal.createQuestion', async () => {
+        const dbPath = path.join(context.extensionPath, "src", "db.db");
+        const db = new sqlite3.Database(dbPath, (err) => {
+            if (err) {
+                vscode.window.showErrorMessage(`Error opening database: ${err.message}`);
+                return;
+            }
+        });
+
+        db.get(GET_MAX_QUESTION_NUMBER_SQL, [], (err, row: { max_number: number }) => {
+            if (err) {
+                vscode.window.showErrorMessage(`Error getting max question number: ${err.message}`);
+                db.close();
+                return;
+            }
+
+            const newQuestionNumber = (row.max_number || 0) + 1;
+
+            db.run(CREATE_QUESTION_SQL, ['', '', ``, '', '', '', ''], function (err) {
+                if (err) {
+                    vscode.window.showErrorMessage(`Error creating new question: ${err.message}`);
+                } else {
+                    const fileContent = `---
+discipline: ""
+description: ""
+source: ""
+tags: []
+---
+
+# Question ${newQuestionNumber}
+
+## Proposition
+
+## Step-by-step
+
+## Answer
+`;
+                    vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' }).then(doc => {
+                        vscode.window.showTextDocument(doc);
+                        vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);
+                    });
+                }
+                db.close();
+            });
+        });
+    });
+
+    return command;
+}
+
+
+// =================================================================================================
+// FILE: src/commands/exportQuestionsJson.ts
 // =================================================================================================
 
 import * as vscode from "vscode";
 import * as path from "path";
-import { buildAllQuestions, saveQuestion, registerAttempt } from "./db";
-import { getWebviewContent } from "./webview";
-import { diagnosticsCollection, updateDiagnostics } from "./diagnostics";
+import { buildAllQuestions } from "../db";
 
-export function registerCommands(context: vscode.ExtensionContext) {
-  const exportQuestionsJsonCommand = vscode.commands.registerCommand(
-    "vscode-cal.exportQuestionsJson",
+export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
+    return vscode.commands.registerCommand(
+        "vscode-cal.exportQuestionsJson",
+        async () => {
+            const dbPath = path.join(context.extensionPath, "src", "db.db");
+            try {
+                const questions = await buildAllQuestions(dbPath);
+                const questionsForJson = questions.map((q) => ({
+                    number: q.question_number,
+                    discipline: q.discipline,
+                    source: q.source,
+                    description: q.description,
+                    proposition: q.proposition,
+                    "step-by-step": q.step_by_step,
+                    answer: q.answer,
+                    tags: q.tags,
+                    spaced_repetition_variables: {
+                        attempts: q.attempts.map((attempt) => ({
+                            datetime: attempt.date.toISOString(),
+                            code: attempt.code,
+                        })),
+                        DSLA: q.daysSinceLastAttempt,
+                        LaMI: q.latestMemoryInterval,
+                        "PMG-D": q.potentialMemoryGainInDays,
+                        "PMG-X": q.potentialMemoryGainMultiplier,
+                        total_attempts: q.attemptsWithHelp + q.attemptsWithoutHelp,
+                        memory_attempts: q.attemptsWithoutHelp,
+                        help_attempts: q.attemptsWithHelp,
+                        attempts_summary: q.attemptsSummary,
+                    },
+                }));
+
+                const questionsAsJson = JSON.stringify(
+                    { questions: questionsForJson },
+                    null,
+                    2
+                );
+                const jsonFolderPath = path.join(context.extensionPath, "src", ".json");
+
+                try {
+                    await vscode.workspace.fs.stat(vscode.Uri.file(jsonFolderPath));
+                } catch (error) {
+                    await vscode.workspace.fs.createDirectory(
+                        vscode.Uri.file(jsonFolderPath)
+                    );
+                }
+
+                const timestamp = new Date()
+                    .toISOString()
+                    .replace(/:/g, "-")
+                    .replace(/\./, "_");
+                const filePath = path.join(
+                    jsonFolderPath,
+                    `${timestamp}_questions.json`
+                );
+                await vscode.workspace.fs.writeFile(
+                    vscode.Uri.file(filePath),
+                    Buffer.from(questionsAsJson, "utf8")
+                );
+                vscode.window.showInformationMessage(
+                    `Successfully exported questions to ${filePath}`
+                );
+            } catch (error: any) {
+                vscode.window.showErrorMessage(error);
+            }
+        }
+    );
+}
+
+
+// =================================================================================================
+// FILE: src/commands/onDidChangeTextDocument.ts
+// =================================================================================================
+
+import * as vscode from "vscode";
+import { getWebviewContent } from "../webview";
+import { getPanels } from "./previewQuestion";
+
+let debounce: NodeJS.Timeout | undefined = undefined;
+
+export function onDidChangeTextDocument(context: vscode.ExtensionContext) {
+    vscode.workspace.onDidChangeTextDocument((event) => {
+        const panels = getPanels();
+        if (
+            panels.length > 0 &&
+            event.document === vscode.window.activeTextEditor?.document
+        ) {
+            if (debounce) {
+                clearTimeout(debounce);
+            }
+            debounce = setTimeout(() => {
+                panels.forEach((panel) => {
+                    if (panel.visible) {
+                        panel.webview.html = getWebviewContent(
+                            event.document.getText(),
+                            panel!,
+                            context
+                        );
+                    }
+                });
+            }, 300);
+        }
+    });
+}
+
+
+// =================================================================================================
+// FILE: src/commands/openQuestionByNumber.ts
+// =================================================================================================
+
+import * as vscode from "vscode";
+import * as path from "path";
+import { buildAllQuestions } from "../db";
+import { updateDiagnostics } from "../diagnostics";
+
+export function openQuestionByNumberCommand(context: vscode.ExtensionContext) {
+    return vscode.commands.registerCommand(
+        "vscode-cal.openQuestionByNumber",
+        async (questionNumber?: number) => {
+            let questionNumberStr: string | undefined;
+
+            if (questionNumber === undefined) {
+                questionNumberStr = await vscode.window.showInputBox({
+                    prompt: "Enter the question number",
+                    placeHolder: "e.g., 1",
+                    validateInput: (text) => {
+                        return /^\d+$/.test(text) ? null : "Please enter a valid number.";
+                    },
+                });
+            } else {
+                questionNumberStr = questionNumber.toString();
+            }
+
+            if (questionNumberStr) {
+                const questionNumber = parseInt(questionNumberStr, 10);
+                const dbPath = path.join(context.extensionPath, "src", "db.db");
+                try {
+                    const questions = await buildAllQuestions(dbPath);
+                    const question = questions.find(
+                        (q) => q.question_number === questionNumber
+                    );
+
+                    if (question) {
+                        const frontMatter = {
+                            discipline: question.discipline,
+                            description: question.description,
+                            source: question.source,
+                            tags: question.tags,
+                        };
+
+                        const content =
+                            `---\n` +
+                            `${Object.entries(frontMatter)
+                                .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+                                .join("\n")}\n` +
+                            `---\n\n` +
+                            `# Question ${question.question_number}\n\n` +
+                            `## Proposition\n${question.proposition}\n\n` +
+                            `## Step-by-step\n${question.step_by_step || ""}\n\n` +
+                            `## Answer\n${question.answer}\n\n`;
+
+                        const doc = await vscode.workspace.openTextDocument({
+                            content: content,
+                            language: "markdown",
+                        });
+                        await vscode.window.showTextDocument(doc);
+                        updateDiagnostics(doc);
+                    } else {
+                        vscode.window.showErrorMessage(
+                            `Question number ${questionNumber} not found.`
+                        );
+                    }
+                } catch (error: any) {
+                    vscode.window.showErrorMessage(error.message);
+                }
+            }
+        }
+    );
+}
+
+// =================================================================================================
+// FILE: src/commands/previewQuestion.ts
+// =================================================================================================
+
+import * as vscode from "vscode";
+import { getWebviewContent } from "../webview";
+
+let panels: vscode.WebviewPanel[] = [];
+
+export function previewQuestionCommand(context: vscode.ExtensionContext) {
+    return vscode.commands.registerCommand(
+        "vscode-cal.previewQuestion",
+        () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showInformationMessage("No active editor");
+                return;
+            }
+
+            const text = editor.document.getText();
+            const questionNumberMatch = text.match(/^# Question (\d+)/im);
+            const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
+
+            const roots = [
+                context.extensionUri,
+                ...(vscode.workspace.workspaceFolders || []).map(
+                    (folder) => folder.uri
+                ),
+            ].filter(Boolean) as vscode.Uri[];
+
+            const panel = vscode.window.createWebviewPanel(
+                "questionPreview",
+                `Preview Q${questionNumber}`,
+                vscode.ViewColumn.Two,
+                {
+                    enableScripts: true,
+                    localResourceRoots: roots, // Use the 'roots' variable here
+                }
+            );
+
+            panels.push(panel);
+
+            panel.onDidDispose(
+                () => {
+                    panels = panels.filter((p) => p !== panel);
+                },
+                null,
+                context.subscriptions
+            );
+
+            panel.webview.html = getWebviewContent(
+                editor.document.getText(),
+                panel,
+                context
+            );
+        }
+    );
+}
+
+export function getPanels() {
+    return panels;
+}
+
+
+// =================================================================================================
+// FILE: src/commands/recommendQuestion.ts
+// =================================================================================================
+
+import * as vscode from "vscode";
+import * as path from "path";
+import { buildAllQuestions } from "../db";
+import { Question } from "../Question";
+
+export function recommendQuestionCommand(context: vscode.ExtensionContext) {
+  return vscode.commands.registerCommand(
+    "vscode-cal.recommendQuestion",
     async () => {
       const dbPath = path.join(context.extensionPath, "src", "db.db");
       try {
         const questions = await buildAllQuestions(dbPath);
-        const questionsForJson = questions.map((q) => ({
-          number: q.question_number,
-          discipline: q.discipline,
-          source: q.source,
-          description: q.description,
-          proposition: q.proposition,
-          "step-by-step": q.step_by_step,
-          answer: q.answer,
-          tags: q.tags,
-          spaced_repetition_variables: {
-            attempts: q.attempts.map((attempt) => ({
-              datetime: attempt.date.toISOString(),
-              code: attempt.code,
-            })),
-            DSLA: q.daysSinceLastAttempt,
-            LaMI: q.latestMemoryInterval,
-            "PMG-D": q.potentialMemoryGainInDays,
-            "PMG-X": q.potentialMemoryGainMultiplier,
-            total_attempts: q.attemptsSummary.total,
-            memory_attempts: q.attemptsSummary.withoutHelp,
-            help_attempts: q.attemptsSummary.withHelp,
-            attempts_summary: `${q.attemptsSummary.total};${q.attemptsSummary.withoutHelp};${q.attemptsSummary.withHelp}`,
-          },
-        }));
+        let recommendedQuestion: Question | null = null;
+        let maxMultiplier = -1;
 
-        const questionsAsJson = JSON.stringify(
-          { questions: questionsForJson },
-          null,
-          2
-        );
-        const jsonFolderPath = path.join(context.extensionPath, "src", ".json");
-
-        try {
-          await vscode.workspace.fs.stat(vscode.Uri.file(jsonFolderPath));
-        } catch (error) {
-          await vscode.workspace.fs.createDirectory(
-            vscode.Uri.file(jsonFolderPath)
-          );
+        for (const question of questions) {
+          if (
+            typeof question.potentialMemoryGainMultiplier === "number" &&
+            question.potentialMemoryGainMultiplier > maxMultiplier
+          ) {
+            maxMultiplier = question.potentialMemoryGainMultiplier;
+            recommendedQuestion = question;
+          }
         }
 
-        const timestamp = new Date()
-          .toISOString()
-          .replace(/:/g, "-")
-          .replace(/\./, "_");
-        const filePath = path.join(
-          jsonFolderPath,
-          `${timestamp}_questions.json`
-        );
-        await vscode.workspace.fs.writeFile(
-          vscode.Uri.file(filePath),
-          Buffer.from(questionsAsJson, "utf8")
-        );
-        vscode.window.showInformationMessage(
-          `Successfully exported questions to ${filePath}`
-        );
+        if (recommendedQuestion) {
+          vscode.commands.executeCommand(
+            "vscode-cal.openQuestionByNumber",
+            recommendedQuestion.question_number
+          );
+        } else {
+          vscode.window.showInformationMessage(
+            "No questions available for recommendation."
+          );
+        }
       } catch (error: any) {
-        vscode.window.showErrorMessage(error);
+        vscode.window.showErrorMessage(error.message);
       }
     }
   );
+}
 
-  context.subscriptions.push(exportQuestionsJsonCommand);
 
-  const openQuestionByNumberCommand = vscode.commands.registerCommand(
-    "vscode-cal.openQuestionByNumber",
-    async (questionNumber?: number) => {
-      let questionNumberStr: string | undefined;
+// =================================================================================================
+// FILE: src/commands/registerAttempt.ts
+// =================================================================================================
 
-      if (questionNumber === undefined) {
-        questionNumberStr = await vscode.window.showInputBox({
-          prompt: "Enter the question number",
-          placeHolder: "e.g., 1",
-          validateInput: (text) => {
-            return /^\d+$/.test(text) ? null : "Please enter a valid number.";
-          },
-        });
-      } else {
-        questionNumberStr = questionNumber.toString();
-      }
+import * as vscode from "vscode";
+import { registerAttempt } from "../db";
 
-      if (questionNumberStr) {
-        const questionNumber = parseInt(questionNumberStr, 10);
-        const dbPath = path.join(context.extensionPath, "src", "db.db");
-        try {
-          const questions = await buildAllQuestions(dbPath);
-          const question = questions.find(
-            (q) => q.question_number === questionNumber
-          );
+export function registerAttemptCommand() {
+    return vscode.commands.registerCommand(
+        "vscode-cal.registerAttempt",
+        async (attemptCode?: number) => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showInformationMessage("No active editor.");
+                return;
+            }
+            const text = editor.document.getText();
+            const questionNumberMatch = text.match(/^# Question (\d+)/im);
+            if (!questionNumberMatch) {
+                vscode.window.showErrorMessage("Could not determine question number.");
+                return;
+            }
+            const questionNumber = parseInt(questionNumberMatch[1], 10);
 
-          if (question) {
-            const frontMatter = {
-              discipline: question.discipline,
-              description: question.description,
-              source: question.source,
-              tags: question.tags,
-            };
+            if (attemptCode === undefined) {
+                const attemptCodeStr = await vscode.window.showInputBox({
+                    prompt: "Enter the attempt code (0 for with help, 1 for without help)",
+                    placeHolder: "e.g., 1",
+                    validateInput: (text) => {
+                        return /^[01]$/.test(text) ? null : "Please enter 0 or 1.";
+                    },
+                });
+                if (attemptCodeStr) {
+                    attemptCode = parseInt(attemptCodeStr, 10);
+                } else {
+                    return; // User cancelled the input
+                }
+            }
 
-            const content =
-              `---\n` +
-              `${Object.entries(frontMatter)
-                .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-                .join("\n")}\n` +
-              `---\n\n` +
-              `# Question ${question.question_number}\n\n` +
-              `## Proposition\n${question.proposition}\n\n` +
-              `## Step-by-step\n${question.step_by_step || ""}\n\n` +
-              `## Answer\n${question.answer}\n\n`;
-
-            const doc = await vscode.workspace.openTextDocument({
-              content: content,
-              language: "markdown",
-            });
-            await vscode.window.showTextDocument(doc);
-            updateDiagnostics(doc);
-          } else {
-            vscode.window.showErrorMessage(
-              `Question number ${questionNumber} not found.`
-            );
-          }
-        } catch (error: any) {
-          vscode.window.showErrorMessage(error.message);
+            registerAttempt(questionNumber, attemptCode);
         }
-      }
-    }
-  );
+    );
+}
 
-  context.subscriptions.push(openQuestionByNumberCommand);
+// =================================================================================================
+// FILE: src/commands/saveQuestion.ts
+// =================================================================================================
 
-  let panels: vscode.WebviewPanel[] = [];
-  let debounce: NodeJS.Timeout | undefined = undefined;
+import * as vscode from "vscode";
+import { saveQuestion } from "../db";
+import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
 
-  const previewQuestionCommand = vscode.commands.registerCommand(
-    "vscode-cal.previewQuestion",
-    () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showInformationMessage("No active editor");
-        return;
-      }
-
-      const text = editor.document.getText();
-      const questionNumberMatch = text.match(/^# Question (\d+)/im);
-      const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
-
-      const roots = [
-        context.extensionUri,
-        ...(vscode.workspace.workspaceFolders || []).map(
-          (folder) => folder.uri
-        ),
-      ].filter(Boolean) as vscode.Uri[];
-
-      const panel = vscode.window.createWebviewPanel(
-        "questionPreview",
-        `Preview Q${questionNumber}`,
-        vscode.ViewColumn.Two,
-        {
-          enableScripts: true,
-          localResourceRoots: roots, // Use the 'roots' variable here
-        }
-      );
-
-      panels.push(panel);
-
-      panel.onDidDispose(
+export function saveQuestionCommand() {
+    return vscode.commands.registerCommand(
+        "vscode-cal.saveQuestion",
         () => {
-          panels = panels.filter((p) => p !== panel);
-        },
-        null,
-        context.subscriptions
-      );
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showInformationMessage("No active editor to save.");
+                return;
+            }
+            const doc = editor.document;
+            updateDiagnostics(doc);
+            if (diagnosticsCollection.get(doc.uri)?.length) {
+                vscode.window.showErrorMessage(
+                    "Cannot save, please fix the errors first."
+                );
+                return;
+            }
+            saveQuestion(doc);
+        }
+    );
+}
 
-      panel.webview.html = getWebviewContent(
-        editor.document.getText(),
-        panel,
-        context
-      );
-    }
-  );
-  context.subscriptions.push(previewQuestionCommand);
 
-  const saveQuestionCommand = vscode.commands.registerCommand(
-    "vscode-cal.saveQuestion",
-    () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showInformationMessage("No active editor to save.");
-        return;
-      }
-      const doc = editor.document;
-      updateDiagnostics(doc);
-      if (diagnosticsCollection.get(doc.uri)?.length) {
-        vscode.window.showErrorMessage(
-          "Cannot save, please fix the errors first."
-        );
-        return;
-      }
-      saveQuestion(doc);
-    }
-  );
-  context.subscriptions.push(saveQuestionCommand);
+// =================================================================================================
+// FILE: src/commands/showRankedQuestions.ts
+// =================================================================================================
 
-  const registerAttemptWithoutHelpCommand = vscode.commands.registerCommand(
-    "vscode-cal.registerAttemptWithoutHelp",
-    () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showInformationMessage("No active editor.");
-        return;
-      }
-      const text = editor.document.getText();
-      const questionNumberMatch = text.match(/^# Question (\d+)/im);
-      if (!questionNumberMatch) {
-        vscode.window.showErrorMessage("Could not determine question number.");
-        return;
-      }
-      const questionNumber = parseInt(questionNumberMatch[1], 10);
-      registerAttempt(questionNumber, 1);
-    }
-  );
-  context.subscriptions.push(registerAttemptWithoutHelpCommand);
+import * as vscode from "vscode";
+import { buildAllQuestions } from "../db";
+import { Question } from "../Question";
+import * as path from "path";
 
-  const registerAttemptWithHelpCommand = vscode.commands.registerCommand(
-    "vscode-cal.registerAttemptWithHelp",
-    () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showInformationMessage("No active editor.");
-        return;
-      }
-      const text = editor.document.getText();
-      const questionNumberMatch = text.match(/^# Question (\d+)/im);
-      if (!questionNumberMatch) {
-        vscode.window.showErrorMessage("Could not determine question number.");
-        return;
-      }
-      const questionNumber = parseInt(questionNumberMatch[1], 10);
-      registerAttempt(questionNumber, 0);
-    }
-  );
-  context.subscriptions.push(registerAttemptWithHelpCommand);
+export function showRankedQuestionsCommand(context: vscode.ExtensionContext) {
+    return vscode.commands.registerCommand('vscode-cal.showRankedQuestions', () => {
+        const dbPath = path.resolve(__dirname, "../../src/db.db");
 
-  vscode.workspace.onDidChangeTextDocument((event) => {
-    if (
-      panels.length > 0 &&
-      event.document === vscode.window.activeTextEditor?.document
-    ) {
-      if (debounce) {
-        clearTimeout(debounce);
-      }
-      debounce = setTimeout(() => {
-        panels.forEach((panel) => {
-          if (panel.visible) {
-            panel.webview.html = getWebviewContent(
-              event.document.getText(),
-              panel!,
-              context
+        buildAllQuestions(dbPath).then(questions => {
+            // Filter out questions where potentialMemoryGainMultiplier is not a number
+            // const sortedQuestions = questions.filter(q => typeof q.potentialMemoryGainMultiplier === 'number');
+            const sortedQuestions = questions;
+
+            // Sort questions by potential memory gain multiplier in descending order
+            sortedQuestions.sort((a, b) => {
+                const pmgA = a.potentialMemoryGainMultiplier;
+                const pmgB = b.potentialMemoryGainMultiplier;
+
+                const isNumA = typeof pmgA === 'number';
+                const isNumB = typeof pmgB === 'number';
+
+                if (isNumA && isNumB) {
+                    return pmgB - pmgA;
+                }
+                if (isNumA) {
+                    return -1; // A (number) comes before B (string)
+                }
+                if (isNumB) {
+                    return 1; // B (number) comes after A (string)
+                }
+
+                // Both are strings, sort based on a predefined order
+                const stringOrder = ['W/H', 'SA', 'NA'];
+                const indexA = stringOrder.indexOf(pmgA as string);
+                const indexB = stringOrder.indexOf(pmgB as string);
+
+                return indexA - indexB;
+            });
+
+            const panel = vscode.window.createWebviewPanel(
+                'rankedQuestions',
+                'Ranked Questions by Memory Gain',
+                vscode.ViewColumn.One,
+                {
+                    enableScripts: true
+                }
             );
-          }
+
+            panel.webview.html = getWebviewContent(sortedQuestions);
+
+            panel.webview.onDidReceiveMessage(
+                message => {
+                    switch (message.command) {
+                        case 'openQuestionByNumber':
+                            vscode.commands.executeCommand('vscode-cal.openQuestionByNumber', message.questionNumber);
+                            return;
+                    }
+                },
+                undefined,
+                context.subscriptions
+            );
+        }).catch(err => {
+            vscode.window.showErrorMessage("Failed to build questions: " + err);
         });
-      }, 300);
+    });
+}
+
+function getWebviewContent(questions: Question[]): string {
+    const tableHeaders = [
+        "#",
+        "Discipline",
+        "Source",
+        "Description",
+        "Attempts Summary",
+        "DSLA",
+        "LaMI",
+        "PMG-D",
+        "PMG-X",
+    ];
+
+    const headerHtml = tableHeaders.map(header => `<th>${header}</th>`).join('');
+
+    const numericPmgs = questions
+        .map(q => q.potentialMemoryGainMultiplier)
+        .filter(pmg => typeof pmg === 'number' && pmg > 1) as number[];
+
+    const minPmg = Math.min(...numericPmgs);
+    const maxPmg = Math.max(...numericPmgs);
+
+    const rows = questions.map(q => {
+        const pmgX = q.potentialMemoryGainMultiplier;
+        const colorStyle = getHighlightColor(pmgX, minPmg, maxPmg);
+
+        return `
+        <tr data-question-number="${q.question_number}" style="cursor: pointer; ${colorStyle}">
+            <td>${q.question_number}</td>
+            <td>${q.discipline}</td>
+            <td>${q.source}</td>
+            <td>${q.description}</td>
+            <td>${q.attemptsSummary}</td>
+            <td>${q.daysSinceLastAttempt}</td>
+            <td>${q.latestMemoryInterval}</td>
+            <td>${q.potentialMemoryGainInDays}</td>
+            <td>${pmgX}</td>
+        </tr>
+    `;
+    }).join('');
+
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Ranked Questions</title>
+            <style>
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #f2f2f2;
+                    cursor: pointer;
+                    user-select: none;
+                }
+                th.sort-asc::after {
+                    content: ' ▲';
+                }
+                th.sort-desc::after {
+                    content: ' ▼';
+                }
+                tr:hover {
+                    background-color: #f5f5f5 !important;
+                    color: black !important;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Questions Ranked by PMG-X ${rows.length}</h1>
+            <table id="questionsTable">
+                <thead>
+                    <tr>
+                        ${headerHtml}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+            <script>
+                const vscode = acquireVsCodeApi();
+                document.querySelectorAll('tr[data-question-number]').forEach(row => {
+                    row.addEventListener('click', event => {
+                        const questionNumber = row.dataset.questionNumber;
+                        if (questionNumber) {
+                            vscode.postMessage({
+                                command: 'openQuestionByNumber',
+                                questionNumber: parseInt(questionNumber)
+                            });
+                        }
+                    });
+                });
+
+                document.querySelectorAll('#questionsTable th').forEach((header, index) => {
+                    header.addEventListener('click', () => {
+                        sortTable(index);
+                    });
+                });
+
+                let sortDirections = [];
+
+                function getPmgxHighlightColor(pmgX, minPmg, maxPmg) {
+                    if (typeof pmgX === 'string') {
+                        switch (pmgX) {
+                            case 'NA': return 'background-color: #F0F0F0;';
+                            case 'SA': return 'background-color: #E6E0F8;';
+                            case 'W/H': return 'background-color: #FFDDC1;';
+                            default: return '';
+                        }
+                    }
+                    if (pmgX <= 1) {
+                        return 'background-color: #006400; color: white;';
+                    }
+                    const hue = 120 * (1 - (pmgX - minPmg) / (maxPmg - minPmg));
+                    return 'background-color: hsl(' + hue + ', 100%, 85%);';
+                }
+
+                function updateRowColors(columnIndex) {
+                    const table = document.getElementById('questionsTable');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const numericColorCols = [0, 5, 6, 7];
+
+                    rows.forEach(row => {
+                        row.style.backgroundColor = '';
+                        row.style.color = '';
+                    });
+
+                    if (columnIndex === 8) { // PMG-X
+                        const pmgValues = rows.map(row => {
+                            const text = row.cells[columnIndex].textContent.trim();
+                            if (['NA', 'SA', 'W/H'].includes(text)) return text;
+                            return parseFloat(text);
+                        });
+                        const numericPmgs = pmgValues.filter(v => typeof v === 'number' && v > 1);
+                        const minPmg = Math.min(...numericPmgs);
+                        const maxPmg = Math.max(...numericPmgs);
+
+                        rows.forEach((row, i) => {
+                            const style = getPmgxHighlightColor(pmgValues[i], minPmg, maxPmg);
+                            row.setAttribute('style', "cursor: pointer; " + style);
+                        });
+
+                    } else if (numericColorCols.includes(columnIndex)) {
+                        const values = rows.map(row => parseFloat(row.cells[columnIndex].textContent.trim())).filter(v => !isNaN(v));
+                        const min = Math.min(...values);
+                        const max = Math.max(...values);
+
+                        rows.forEach(row => {
+                            const value = parseFloat(row.cells[columnIndex].textContent.trim());
+                            if (isNaN(value)) return;
+                            const hue = 120 * (1 - (value - min) / (max - min));
+                            row.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)';
+                        });
+                    }
+                }
+
+                function sortTable(columnIndex) {
+                    const table = document.getElementById('questionsTable');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const headers = table.querySelectorAll('th');
+
+                    const direction = sortDirections[columnIndex] === 'asc' ? 'desc' : 'asc';
+                    sortDirections = new Array(headers.length).fill(null);
+                    sortDirections[columnIndex] = direction;
+                    const directionMultiplier = direction === 'asc' ? 1 : -1;
+
+                    rows.sort((a, b) => {
+                        const aText = a.cells[columnIndex].textContent.trim();
+                        const bText = b.cells[columnIndex].textContent.trim();
+
+                        const aNum = parseFloat(aText);
+                        const bNum = parseFloat(bText);
+                        const isNumA = !isNaN(aNum);
+                        const isNumB = !isNaN(bNum);
+
+                        // Grouping logic: numbers always come before strings
+                        if (isNumA && !isNumB) {
+                            return -1;
+                        }
+                        if (!isNumA && isNumB) {
+                            return 1;
+                        }
+
+                        // At this point, both are numbers or both are strings.
+                        // Sort within the group based on type.
+                        if (isNumA) { // Both are numbers
+                            return (aNum - bNum) * directionMultiplier;
+                        } else { // Both are strings
+                            if (columnIndex === 8) { // Special string sort for PMG-X
+                                const pmgOrder = { 'W/H': 1, 'SA': 2, 'NA': 3 };
+                                const aVal = pmgOrder[aText] || 99;
+                                const bVal = pmgOrder[bText] || 99;
+                                return (aVal - bVal) * directionMultiplier;
+                            }
+                            // Standard string sort for other columns
+                            return aText.toLowerCase().localeCompare(bText.toLowerCase()) * directionMultiplier;
+                        }
+                    });
+
+                    headers.forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+                    headers[columnIndex].classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+
+                    rows.forEach(row => tbody.appendChild(row));
+                    updateRowColors(columnIndex);
+                }
+            </script>
+        </body>
+        </html>
+    `;
+}
+
+function getHighlightColor(pmgX: number | string, minPmg: number, maxPmg: number): string {
+    if (typeof pmgX === 'string') {
+        switch (pmgX) {
+            case 'NA':
+                return 'background-color: #F0F0F0;'; // light grey for Not Applicable
+            case 'SA':
+                return 'background-color: #E6E0F8;'; // light purple for Single Attempt
+            case 'W/H':
+                return 'background-color: #FFDDC1;'; // light orange for With Help
+            default:
+                return '';
+        }
     }
-  });
+
+    if (pmgX <= 1) {
+        return 'background-color: #006400; color: white;'; // dark green for pmgX <= 1
+    }
+
+    // Scale from green (120) to red (0)
+    // To make the scale more sensitive to higher values, we can use a non-linear transformation if needed.
+    // For now, a linear scale is implemented.
+    const hue = 120 * (1 - (pmgX - minPmg) / (maxPmg - minPmg));
+    return `background-color: hsl(${hue}, 100%, 85%);`;
 }
 
 
@@ -848,29 +1359,29 @@ export async function saveQuestion(document: vscode.TextDocument) {
 }
 
 export async function registerAttempt(questionNumber: number, code: number) {
-    const dbPath = path.join(
-        vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
-        "src",
-        "db.db"
-    );
-    const db = new sqlite3.Database(dbPath);
+  const dbPath = path.join(
+    vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
+    "src",
+    "db.db"
+  );
+  const db = new sqlite3.Database(dbPath);
 
-    db.run(
-        "INSERT INTO attempts (question_number, code) VALUES (?, ?)",
-        [questionNumber, code],
-        function (err) {
-            if (err) {
-                vscode.window.showErrorMessage(
-                    `Error registering attempt: ${err.message}`
-                );
-            } else {
-                vscode.window.showInformationMessage(
-                    `Attempt for question ${questionNumber} registered successfully.`
-                );
-            }
-        }
-    );
-    db.close();
+  db.run(
+    "INSERT INTO attempts (question_number, code) VALUES (?, ?)",
+    [questionNumber, code],
+    function (err) {
+      if (err) {
+        vscode.window.showErrorMessage(
+          `Error registering attempt: ${err.message}`
+        );
+      } else {
+        vscode.window.showInformationMessage(
+          `Attempt for question ${questionNumber} registered successfully.`
+        );
+      }
+    }
+  );
+  db.close();
 }
 
 
@@ -926,6 +1437,24 @@ export const CREATE_TABLES_SQL = `
         REFERENCES questions(question_number)
         ON DELETE CASCADE
     );
+`;
+
+export const GET_QUESTION_BY_NUMBER_SQL = `
+    SELECT
+  q.*,
+  COALESCE(
+    json_group_array(a.code ORDER BY a.attempt_datetime), '[]' ) AS code_vec_json,
+  COALESCE(
+    json_group_array(a.attempt_datetime ORDER BY a.attempt_datetime), '[]' ) AS date_vec_json
+    FROM questions AS q
+    LEFT JOIN attempts AS a
+    ON a.question_number = q.question_number
+    WHERE q.question_number = ?
+    GROUP BY q.question_number
+`;
+
+export const GET_MAX_QUESTION_NUMBER_SQL = `
+    SELECT MAX(question_number) as max_number FROM questions
 `;
 
 // =================================================================================================
@@ -1036,7 +1565,7 @@ export function updateDiagnostics(document: vscode.TextDocument) {
 // =================================================================================================
 
 import * as vscode from "vscode";
-import { registerCommands } from "./commands";
+import { registerCommands } from "./commands/commandsLoader";
 import { updateDiagnostics } from "./diagnostics";
 import { SidepanelProvider } from "./sidepanelProvider";
 
@@ -1060,7 +1589,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-export function deactivate() {}
+export function deactivate() { }
 
 
 // =================================================================================================
@@ -1085,15 +1614,13 @@ export class Question {
   attempts: { code: number; date: Date }[];
 
   // Calculated properties
-  daysSinceLastAttempt: number | null;
+  daysSinceLastAttempt: number | string;
   latestMemoryInterval: number | string;
   potentialMemoryGainMultiplier: number | string;
   potentialMemoryGainInDays: number | string;
-  attemptsSummary: {
-    total: number;
-    withoutHelp: number;
-    withHelp: number;
-  };
+  attemptsWithoutHelp: number;
+  attemptsWithHelp: number;
+  attemptsSummary: string;
 
   constructor(dbData: any) {
     // Assign data from the database record
@@ -1108,68 +1635,65 @@ export class Question {
       ? dbData.tags.split(",").map((tag: string) => tag.trim())
       : [];
 
-    const codeVec: number[] = JSON.parse(dbData.code_vec_json || "[]");
-    const dateVec: string[] = JSON.parse(dbData.date_vec_json || "[]");
-    this.attempts = codeVec.map((code, index) => ({
-      code: code,
-      date: new Date(dateVec[index]),
-    }));
 
-    // Initialize calculated properties
-    this.daysSinceLastAttempt = this.calculateDaysSinceLastAttempt();
-    this.attemptsSummary = this.calculateAttemptsSummary(codeVec);
+    const codeVec: number[] = JSON.parse(dbData.code_vec_json);
+    const dateVec: string[] = JSON.parse(dbData.date_vec_json);
 
-    // The logic from calculateLatestMemoryIntervalAndPotentialGain is now directly in the constructor
-    // to satisfy TypeScript's strict initialization rules.
+    if (codeVec.length === 1 && codeVec[0] === null) {
+      this.attempts = [];
+    } else {
+      this.attempts = codeVec.map((code, index) => ({
+        code: code,
+        date: new Date(dateVec[index]),
+      }));
+    }
+
+    this.attemptsWithoutHelp = codeVec.filter((c) => c === 1).length;
+    this.attemptsWithHelp = codeVec.filter((c) => c === 0).length;
+
     if (this.attempts.length === 0) {
+      this.daysSinceLastAttempt = STATUS_NA;
       this.latestMemoryInterval = STATUS_NA;
       this.potentialMemoryGainMultiplier = STATUS_NA;
       this.potentialMemoryGainInDays = STATUS_NA;
+      this.attemptsSummary = STATUS_NA;
     } else {
-      const memoryIntervals: number[] = [];
-      for (let j = 1; j < codeVec.length; j++) {
-        if (codeVec[j] === 1) {
-          const prev = new Date(dateVec[j - 1]);
-          const curr = new Date(dateVec[j]);
-          const interval = Math.floor(
-            (curr.getTime() - prev.getTime()) / MS_PER_DAY
-          );
-          memoryIntervals.push(interval);
-        }
-      }
+      this.daysSinceLastAttempt = this.calculateDaysSinceLastAttempt();
+      this.attemptsSummary = this.calculateAttemptsSummary(codeVec);
 
       const lastCode = codeVec[codeVec.length - 1];
-      const daysSinceLast = this.daysSinceLastAttempt;
-
-      if (daysSinceLast === null) {
-        // This case should ideally not be hit if attempts > 0, but it's a safeguard.
-        this.latestMemoryInterval = STATUS_NA;
-        this.potentialMemoryGainMultiplier = STATUS_NA;
-        this.potentialMemoryGainInDays = STATUS_NA;
+      if (lastCode === 0) {
+        this.latestMemoryInterval = STATUS_WH;
+        this.potentialMemoryGainMultiplier = STATUS_WH;
+        this.potentialMemoryGainInDays = this.daysSinceLastAttempt;
       } else if (lastCode === 1 && codeVec.length === 1) {
         this.latestMemoryInterval = STATUS_SA;
         this.potentialMemoryGainMultiplier = STATUS_SA;
-        this.potentialMemoryGainInDays = daysSinceLast;
-      } else if (memoryIntervals.length === 0 || lastCode === 0) {
-        this.latestMemoryInterval = STATUS_WH;
-        this.potentialMemoryGainMultiplier = STATUS_WH;
-        this.potentialMemoryGainInDays = daysSinceLast;
+        this.potentialMemoryGainInDays = this.daysSinceLastAttempt;
       } else {
+        const memoryIntervals: number[] = [];
+        for (let j = 1; j < codeVec.length; j++) {
+          if (codeVec[j] === 1) {
+            const prev = new Date(dateVec[j - 1]);
+            const curr = new Date(dateVec[j]);
+            const interval = Math.floor(
+              (curr.getTime() - prev.getTime()) / MS_PER_DAY
+            );
+            memoryIntervals.push(interval);
+          }
+        }
         const lastInterval = memoryIntervals[memoryIntervals.length - 1];
         const latestInterval = lastInterval === 0 ? 1 : lastInterval;
         this.latestMemoryInterval = latestInterval;
         this.potentialMemoryGainMultiplier = parseFloat(
-          (daysSinceLast / latestInterval).toFixed(2)
+          ((this.daysSinceLastAttempt as number) / latestInterval).toFixed(2)
         );
-        this.potentialMemoryGainInDays = daysSinceLast - latestInterval;
+        this.potentialMemoryGainInDays = (this.daysSinceLastAttempt as number) - latestInterval;
       }
     }
   }
 
-  private calculateDaysSinceLastAttempt(): number | null {
-    if (this.attempts.length === 0) {
-      return null;
-    }
+  private calculateDaysSinceLastAttempt(): number {
     const lastAttemptDate = this.attempts[this.attempts.length - 1].date;
     const today = new Date();
     // Set both dates to midnight to compare just the days
@@ -1180,13 +1704,7 @@ export class Question {
   }
 
   private calculateAttemptsSummary(code_vector: number[]) {
-    const withoutHelp = code_vector.filter((c) => c === 1).length;
-    const withHelp = code_vector.filter((c) => c === 0).length;
-    return {
-      total: withoutHelp + withHelp,
-      withoutHelp,
-      withHelp,
-    };
+    return `${this.attemptsWithoutHelp + this.attemptsWithHelp}; ${this.attemptsWithoutHelp}; ${this.attemptsWithHelp}`;
   }
 }
 
@@ -1196,13 +1714,15 @@ export class Question {
 // =================================================================================================
 
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 
 export class SidepanelProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "cal-question-view";
 
   private _view?: vscode.WebviewView;
 
-  constructor(private readonly _extensionUri: vscode.Uri) {}
+  constructor(private readonly _extensionUri: vscode.Uri) { }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -1222,13 +1742,11 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.onDidReceiveMessage((data) => {
       switch (data.type) {
-        case "questionEntered": {
-          if (data.value) {
-            vscode.commands.executeCommand(
-              "vscode-cal.openQuestionByNumber",
-              parseInt(data.value)
-            );
-          }
+        case "openQuestion": {
+          vscode.commands.executeCommand(
+            "vscode-cal.openQuestionByNumber",
+            parseInt(data.value)
+          );
           break;
         }
         case "previewQuestion": {
@@ -1239,22 +1757,30 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
           vscode.commands.executeCommand("vscode-cal.saveQuestion");
           break;
         }
-        case "registerAttemptWithoutHelp": {
+        case "recommendQuestion": {
+          vscode.commands.executeCommand("vscode-cal.recommendQuestion");
+          break;
+        }
+        case "registerAttempt": {
           vscode.commands.executeCommand(
-            "vscode-cal.registerAttemptWithoutHelp"
+            "vscode-cal.registerAttempt",
+            data.value
           );
           break;
         }
-        case "registerAttemptWithHelp": {
-          vscode.commands.executeCommand("vscode-cal.registerAttemptWithHelp");
+        case "showRankedQuestions": {
+          vscode.commands.executeCommand("vscode-cal.showRankedQuestions");
           break;
+        }
+        case "createQuestion": {
+            vscode.commands.executeCommand("vscode-cal.createQuestion");
+            break;
         }
       }
     });
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
-    // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "media", "main.js")
     );
@@ -1270,76 +1796,18 @@ export class SidepanelProvider implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this._extensionUri, "media", "main.css")
     );
 
-    // Use a nonce to only allow a specific script to be run.
     const nonce = getNonce();
 
-    return /*html*/ `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link href="${styleResetUri}" rel="stylesheet">
-                <link href="${styleVSCodeUri}" rel="stylesheet">
-                <link href="${styleMainUri}" rel="stylesheet">
-				<title>Question Selector</title>
-			</head>
-			<body>
-				<div class="container">
-					<div class="input-container">
-						<input type="text" id="question-number" placeholder="Enter question number" />
-					</div>
-					<div class="button-container">
-						<button id="preview-button" class="primary">Preview Question</button>
-					</div>
-					<div class="button-container">
-						<button id="save-button" class="primary">Save Question</button>
-					</div>
-                    <div class="button-container">
-                        <button id="register-attempt-without-help-button" class="secondary-green">Register attempt without help</button>
-                    </div>
-                    <div class="button-container">
-                        <button id="register-attempt-with-help-button" class="secondary-yellow">Register attempt with help</button>
-                    </div>
-				</div>
+    const htmlPath = path.join(this._extensionUri.fsPath, 'src', 'sidepanel.html');
+    let html = fs.readFileSync(htmlPath, 'utf8');
 
-				<script nonce="${nonce}">
-                    const vscode = acquireVsCodeApi();
-                    const input = document.getElementById('question-number');
-                    const previewButton = document.getElementById('preview-button');
-                    const saveButton = document.getElementById('save-button');
-                    const registerAttemptWithoutHelpButton = document.getElementById('register-attempt-without-help-button');
-                    const registerAttemptWithHelpButton = document.getElementById('register-attempt-with-help-button');
-                    
-                    let timeout;
-                    input.addEventListener('keyup', () => {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(() => {
-                            vscode.postMessage({
-                                type: 'questionEntered',
-                                value: input.value
-                            });
-                        }, 500);
-                    });
+    html = html.replace(/\${webview.cspSource}/g, webview.cspSource)
+      .replace(/\${nonce}/g, nonce)
+      .replace(/\${styleResetUri}/g, styleResetUri.toString())
+      .replace(/\${styleVSCodeUri}/g, styleVSCodeUri.toString())
+      .replace(/\${styleMainUri}/g, styleMainUri.toString());
 
-                    previewButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'previewQuestion' });
-                    });
-
-                    saveButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'saveQuestion' });
-                    });
-
-                    registerAttemptWithoutHelpButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'registerAttemptWithoutHelp' });
-                    });
-
-                    registerAttemptWithHelpButton.addEventListener('click', () => {
-                        vscode.postMessage({ type: 'registerAttemptWithHelp' });
-                    });
-				</script>
-			</body>
-			</html>`;
+    return html;
   }
 }
 
@@ -1376,6 +1844,112 @@ suite('Extension Test Suite', () => {
 
 
 // =================================================================================================
+// FILE: src/test/question-management.test.ts
+// =================================================================================================
+
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+import * as sinon from 'sinon';
+import * as commands from '../commands/commandsLoader';
+import * as db from '../db';
+import * as diagnostics from '../diagnostics';
+import { Question } from '../Question';
+
+suite('Question Management Commands', () => {
+    let showInputBoxStub: sinon.SinonStub;
+    let showErrorMessageStub: sinon.SinonStub;
+    let buildAllQuestionsStub: sinon.SinonStub;
+    let openTextDocumentStub: sinon.SinonStub;
+    let showTextDocumentStub: sinon.SinonStub;
+    let updateDiagnosticsStub: sinon.SinonStub;
+
+    suiteSetup(() => {
+        // Stub vscode functions that are used across tests
+        showInputBoxStub = sinon.stub(vscode.window, 'showInputBox');
+        showErrorMessageStub = sinon.stub(vscode.window, 'showErrorMessage');
+        openTextDocumentStub = sinon.stub(vscode.workspace, 'openTextDocument');
+        showTextDocumentStub = sinon.stub(vscode.window, 'showTextDocument');
+        buildAllQuestionsStub = sinon.stub(db, 'buildAllQuestions');
+        updateDiagnosticsStub = sinon.stub(diagnostics, 'updateDiagnostics');
+
+        // Register commands once
+        const tempContext = { subscriptions: [], extensionPath: '/mock/path' } as any;
+        commands.registerCommands(tempContext);
+    });
+
+    suiteTeardown(() => {
+        sinon.restore();
+    });
+
+    teardown(() => {
+        // Reset the state of the stubs
+        showInputBoxStub.reset();
+        showErrorMessageStub.reset();
+        buildAllQuestionsStub.reset();
+        openTextDocumentStub.reset();
+        showTextDocumentStub.reset();
+        updateDiagnosticsStub.reset();
+    });
+
+    suite('openQuestionByNumber', () => {
+        test('should not show an error when input is cancelled', async () => {
+            showInputBoxStub.resolves(undefined);
+
+            await vscode.commands.executeCommand('vscode-cal.openQuestionByNumber');
+
+            assert.strictEqual(showErrorMessageStub.called, false, 'showErrorMessage was called unexpectedly');
+        });
+
+        test('should show an error if the question number does not exist', async () => {
+            const nonExistentQuestionNumber = '9999';
+            showInputBoxStub.resolves(nonExistentQuestionNumber);
+            buildAllQuestionsStub.resolves([]); // No questions found
+
+            await vscode.commands.executeCommand('vscode-cal.openQuestionByNumber');
+
+            assert.ok(
+                showErrorMessageStub.calledWith(`Question number ${nonExistentQuestionNumber} not found.`),
+                'Error message for non-existent question was not shown'
+            );
+        });
+
+        test('should open a new markdown editor with the question content on success', async () => {
+            const questionNumber = '1';
+            const mockQuestionData = {
+                question_number: 1,
+                discipline: 'Math',
+                source: 'Test Book',
+                description: 'A test question',
+                proposition: 'What is 2+2?',
+                step_by_step: 'First, take 2. Then, add 2.',
+                answer: '4',
+                tags: 'calculus, easy',
+                code_vec_json: '[1]',
+                date_vec_json: '["2025-07-20T12:00:00.000Z"]'
+            };
+            const mockQuestion = new Question(mockQuestionData);
+
+            showInputBoxStub.resolves(questionNumber);
+            buildAllQuestionsStub.resolves([mockQuestion]);
+            openTextDocumentStub.resolves({} as vscode.TextDocument);
+            showTextDocumentStub.resolves({} as vscode.TextEditor);
+
+            await vscode.commands.executeCommand('vscode-cal.openQuestionByNumber');
+
+            assert.ok(openTextDocumentStub.calledOnce, 'openTextDocument was not called');
+            assert.ok(showTextDocumentStub.calledOnce, 'showTextDocument was not called');
+            assert.strictEqual(showErrorMessageStub.called, false, 'showErrorMessage was called unexpectedly on success');
+
+            const contentArg = openTextDocumentStub.firstCall.args[0].content;
+            assert.ok(contentArg.includes(`# Question ${mockQuestion.question_number}`), 'Content does not contain question number');
+            assert.ok(contentArg.includes(`discipline: ${JSON.stringify(mockQuestion.discipline)}`), 'Content does not contain discipline');
+            assert.ok(contentArg.includes(`## Proposition\n${mockQuestion.proposition}`), 'Content does not contain proposition');
+        });
+    });
+});
+
+
+// =================================================================================================
 // FILE: src/webview.ts
 // =================================================================================================
 
@@ -1405,6 +1979,7 @@ export function getWebviewContent(
   const md = new markdownit({
     html: true,
     linkify: true,
+    breaks: true,
   }).use(katex);
 
   const { content } = matter(text);
