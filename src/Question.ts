@@ -1,3 +1,5 @@
+import matter from "gray-matter";
+
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const STATUS_NA = "NA";
 const STATUS_SA = "SA";
@@ -128,5 +130,45 @@ ${this.step_by_step || ""}
 ## Answer
 ${this.answer}
 `;
+  }
+
+  static parseFromText(text: string): Partial<Question> {
+    const parsed = matter(text);
+    const content = parsed.content;
+
+    const questionNumberMatch = content.match(/^# Question (\d+)/im);
+    const question_number = questionNumberMatch
+      ? parseInt(questionNumberMatch[1], 10)
+      : -1;
+
+    let proposition = "";
+    let step_by_step = "";
+    let answer = "";
+
+    const propositionContent = content.split("## Proposition")[1];
+    if (propositionContent) {
+      if (propositionContent.includes("## Step-by-step")) {
+        const stepByStepSplit = propositionContent.split("## Step-by-step");
+        proposition = stepByStepSplit[0].trim();
+        const answerSplit = stepByStepSplit[1].split("## Answer");
+        step_by_step = answerSplit[0].trim();
+        answer = answerSplit[1] ? answerSplit[1].trim() : "";
+      } else {
+        const answerSplit = propositionContent.split("## Answer");
+        proposition = answerSplit[0].trim();
+        answer = answerSplit[1] ? answerSplit[1].trim() : "";
+      }
+    }
+
+    return {
+      question_number,
+      discipline: parsed.data.discipline,
+      source: parsed.data.source,
+      description: parsed.data.description,
+      tags: parsed.data.tags,
+      proposition,
+      step_by_step,
+      answer,
+    };
   }
 }

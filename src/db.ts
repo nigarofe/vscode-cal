@@ -50,55 +50,27 @@ export async function buildAllQuestions(): Promise<Question[]> {
 
 export async function saveQuestion(document: vscode.TextDocument) {
   const text = document.getText();
-  const questionNumberMatch = text.match(/^# Question (\d+)/im);
+  const questionData = Question.parseFromText(text);
 
-  if (!questionNumberMatch) {
+  if (questionData.question_number === -1) {
     vscode.window.showErrorMessage(
       "Could not save: Question number not found in the document."
     );
     return;
   }
-  const questionNumber = parseInt(questionNumberMatch[1], 10);
 
-  const parsed = matter(text);
-  const content = parsed.content;
-
-  const description = parsed.data.description;
-
-  let proposition = "";
-  let stepByStep = "";
-  let answer = "";
-
-  const propositionContent = content.split("## Proposition")[1];
-  if (propositionContent === undefined) {
+  if (!questionData.proposition) {
     vscode.window.showErrorMessage(
       "Could not save: '## Proposition' section not found."
     );
     return;
   }
 
-  if (propositionContent.includes("## Step-by-step")) {
-    const stepByStepSplit = propositionContent.split("## Step-by-step");
-    proposition = stepByStepSplit[0].trim();
-    const answerSplit = stepByStepSplit[1].split("## Answer");
-    if (answerSplit[1] === undefined) {
-      vscode.window.showErrorMessage(
-        "Could not save: '## Answer' section not found after '## Step-by-step'."
-      );
-      return;
-    }
-    stepByStep = answerSplit[0].trim();
-    answer = answerSplit[1].trim();
-  } else {
-    const answerSplit = propositionContent.split("## Answer");
-    if (answerSplit[1] === undefined) {
-      vscode.window.showErrorMessage(
-        "Could not save: '## Answer' section not found."
-      );
-      return;
-    }
-    proposition = answerSplit[0].trim();
-    answer = answerSplit[1].trim();
+  if (!questionData.answer) {
+    vscode.window.showErrorMessage(
+      "Could not save: '## Answer' section not found."
+    );
+    return;
   }
 
   const dbPath = path.join(
@@ -111,14 +83,14 @@ export async function saveQuestion(document: vscode.TextDocument) {
   db.run(
     UPDATE_QUESTION_SQL,
     [
-      parsed.data.discipline,
-      parsed.data.source,
-      description,
-      proposition,
-      stepByStep,
-      answer,
-      parsed.data.tags.join(", "),
-      questionNumber,
+      questionData.discipline,
+      questionData.source,
+      questionData.description,
+      questionData.proposition,
+      questionData.step_by_step,
+      questionData.answer,
+      questionData.tags ? questionData.tags.join(", ") : "",
+      questionData.question_number,
     ],
     function (err) {
       if (err) {
@@ -127,7 +99,7 @@ export async function saveQuestion(document: vscode.TextDocument) {
         );
       } else {
         vscode.window.showInformationMessage(
-          `Question ${questionNumber} updated successfully.`
+          `Question ${questionData.question_number} updated successfully.`
         );
       }
     }

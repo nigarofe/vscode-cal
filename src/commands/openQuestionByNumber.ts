@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { updateDiagnostics } from "../diagnostics";
+import { buildAllQuestions } from "../db";
 
 export function openQuestionByNumberCommand() {
     return vscode.commands.registerCommand(
@@ -13,9 +14,17 @@ export function openQuestionByNumberCommand() {
                 return;
             }
 
-            const uri = vscode.Uri.parse(`vscode-cal:Question ${questionNumber}.md`);
-            const doc = await vscode.workspace.openTextDocument(uri);
-            await vscode.window.showTextDocument(doc, { preview: true });
+            const questions = await buildAllQuestions();
+            const question = questions.find(q => q.question_number === questionNumber);
+
+            if (!question) {
+                vscode.window.showErrorMessage(`Question number ${questionNumber} not found.`);
+                return;
+            }
+
+            const fileContent = question.generateContentFromQuestion();
+            const doc = await vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' });
+            await vscode.window.showTextDocument(doc, { preview: false });
             updateDiagnostics(doc);
         }
     );
