@@ -67,6 +67,7 @@
 │   ├───diagnostics.ts
 │   ├───extension.ts
 │   ├───Question.ts
+│   ├───questionCache.ts
 │   ├───sidepanel.html
 │   ├───sidepanelProvider.ts
 │   └───webview.ts
@@ -430,7 +431,7 @@ import { showRankedQuestionsCommand } from "./showRankedQuestions";
 export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(createQuestionCommand(context));
     context.subscriptions.push(exportQuestionsJsonCommand(context));
-    context.subscriptions.push(openQuestionByNumberCommand(context));
+    context.subscriptions.push(openQuestionByNumberCommand());
     context.subscriptions.push(previewQuestionCommand(context));
     context.subscriptions.push(saveQuestionCommand());
     context.subscriptions.push(registerAttemptCommand());
@@ -448,6 +449,7 @@ import * as vscode from "vscode";
 import * as sqlite3 from "sqlite3";
 import * as path from "path";
 import { CREATE_QUESTION_SQL, GET_MAX_QUESTION_NUMBER_SQL } from "../db_sql_queries";
+import { Question } from "../Question";
 
 export function createQuestionCommand(context: vscode.ExtensionContext) {
     const command = vscode.commands.registerCommand('vscode-cal.createQuestion', async () => {
@@ -472,21 +474,21 @@ export function createQuestionCommand(context: vscode.ExtensionContext) {
                 if (err) {
                     vscode.window.showErrorMessage(`Error creating new question: ${err.message}`);
                 } else {
-                    const fileContent = `---
-discipline: ""
-description: ""
-source: ""
-tags: []
----
+                    const newQuestion = new Question({
+                        question_number: newQuestionNumber,
+                        discipline: '',
+                        source: '',
+                        description: '',
+                        proposition: '',
+                        step_by_step: '',
+                        answer: '',
+                        tags: '[]',
+                        code_vec_json: '[]',
+                        date_vec_json: '[]'
+                    });
 
-# Question ${newQuestionNumber}
-
-## Proposition
-
-## Step-by-step
-
-## Answer
-`;
+                    const fileContent = newQuestion.generateContentFromQuestion();
+                    
                     vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' }).then(doc => {
                         vscode.window.showTextDocument(doc);
                         vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);
@@ -513,9 +515,8 @@ export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.exportQuestionsJson",
         async () => {
-            const dbPath = path.join(context.extensionPath, "src", "db.db");
             try {
-                const questions = await buildAllQuestions(dbPath);
+                const questions = await buildAllQuestions();
                 const questionsForJson = questions.map((q) => ({
                     number: q.question_number,
                     discipline: q.discipline,
@@ -620,74 +621,48 @@ export function onDidChangeTextDocument(context: vscode.ExtensionContext) {
 // =================================================================================================
 
 import * as vscode from "vscode";
-import * as path from "path";
-import { buildAllQuestions } from "../db";
 import { updateDiagnostics } from "../diagnostics";
+import { buildAllQuestions } from "../db";
 
-export function openQuestionByNumberCommand(context: vscode.ExtensionContext) {
+export function openQuestionByNumberCommand() {
     return vscode.commands.registerCommand(
         "vscode-cal.openQuestionByNumber",
         async (questionNumber?: number) => {
-            let questionNumberStr: string | undefined;
-
             if (questionNumber === undefined) {
-                questionNumberStr = await vscode.window.showInputBox({
-                    prompt: "Enter the question number",
-                    placeHolder: "e.g., 1",
-                    validateInput: (text) => {
-                        return /^\d+$/.test(text) ? null : "Please enter a valid number.";
-                    },
-                });
-            } else {
-                questionNumberStr = questionNumber.toString();
+                questionNumber = await askForQuestionNumber();
             }
 
-            if (questionNumberStr) {
-                const questionNumber = parseInt(questionNumberStr, 10);
-                const dbPath = path.join(context.extensionPath, "src", "db.db");
-                try {
-                    const questions = await buildAllQuestions(dbPath);
-                    const question = questions.find(
-                        (q) => q.question_number === questionNumber
-                    );
-
-                    if (question) {
-                        const frontMatter = {
-                            discipline: question.discipline,
-                            description: question.description,
-                            source: question.source,
-                            tags: question.tags,
-                        };
-
-                        const content =
-                            `---\n` +
-                            `${Object.entries(frontMatter)
-                                .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-                                .join("\n")}\n` +
-                            `---\n\n` +
-                            `# Question ${question.question_number}\n\n` +
-                            `## Proposition\n${question.proposition}\n\n` +
-                            `## Step-by-step\n${question.step_by_step || ""}\n\n` +
-                            `## Answer\n${question.answer}\n\n`;
-
-                        const doc = await vscode.workspace.openTextDocument({
-                            content: content,
-                            language: "markdown",
-                        });
-                        await vscode.window.showTextDocument(doc);
-                        updateDiagnostics(doc);
-                    } else {
-                        vscode.window.showErrorMessage(
-                            `Question number ${questionNumber} not found.`
-                        );
-                    }
-                } catch (error: any) {
-                    vscode.window.showErrorMessage(error.message);
-                }
+            if (isNaN(questionNumber)) {
+                return;
             }
+
+            const questions = await buildAllQuestions();
+            const question = questions.find(q => q.question_number === questionNumber);
+
+            if (!question) {
+                vscode.window.showErrorMessage(`Question number ${questionNumber} not found.`);
+                return;
+            }
+
+            const fileContent = question.generateContentFromQuestion();
+            const doc = await vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' });
+            await vscode.window.showTextDocument(doc, { preview: false });
+            updateDiagnostics(doc);
         }
     );
 }
+
+async function askForQuestionNumber(): Promise<number> {
+    const questionNumberStr = await vscode.window.showInputBox({
+        prompt: "Enter the question number",
+        placeHolder: "e.g., 1",
+        validateInput: (text) => {
+            return /^\d+$/.test(text) ? null : "Please enter a valid number.";
+        },
+    });
+    return parseInt(questionNumberStr || "");
+}
+
 
 // =================================================================================================
 // FILE: src/commands/previewQuestion.ts
@@ -766,9 +741,8 @@ export function recommendQuestionCommand(context: vscode.ExtensionContext) {
   return vscode.commands.registerCommand(
     "vscode-cal.recommendQuestion",
     async () => {
-      const dbPath = path.join(context.extensionPath, "src", "db.db");
       try {
-        const questions = await buildAllQuestions(dbPath);
+        const questions = await buildAllQuestions();
         let recommendedQuestion: Question | null = null;
         let maxMultiplier = -1;
 
@@ -851,6 +825,7 @@ export function registerAttemptCommand() {
 import * as vscode from "vscode";
 import { saveQuestion } from "../db";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
+import { Question } from "../Question";
 
 export function saveQuestionCommand() {
     return vscode.commands.registerCommand(
@@ -869,7 +844,14 @@ export function saveQuestionCommand() {
                 );
                 return;
             }
-            saveQuestion(doc);
+            const text = doc.getText();
+            const questionData = Question.fromText(text);
+            const errors = Question.validate(questionData);
+            if (errors.length > 0) {
+                vscode.window.showErrorMessage(`Could not save: ${errors.join(" ")}`);
+                return;
+            }
+            saveQuestion(questionData);
         }
     );
 }
@@ -886,9 +868,8 @@ import * as path from "path";
 
 export function showRankedQuestionsCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand('vscode-cal.showRankedQuestions', () => {
-        const dbPath = path.resolve(__dirname, "../../src/db.db");
 
-        buildAllQuestions(dbPath).then(questions => {
+        buildAllQuestions().then(questions => {
             // Filter out questions where potentialMemoryGainMultiplier is not a number
             // const sortedQuestions = questions.filter(q => typeof q.potentialMemoryGainMultiplier === 'number');
             const sortedQuestions = questions;
@@ -1207,7 +1188,6 @@ import {
 } from "./db_sql_queries";
 import { Question } from "./Question";
 import * as vscode from "vscode";
-import matter from "gray-matter";
 
 const dbPath = path.resolve(__dirname, "../src/db.db");
 
@@ -1228,7 +1208,7 @@ export function initializeDatabase() {
   return db;
 }
 
-export async function buildAllQuestions(dbPath: string): Promise<Question[]> {
+export async function buildAllQuestions(): Promise<Question[]> {
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
       if (err) {
@@ -1248,59 +1228,7 @@ export async function buildAllQuestions(dbPath: string): Promise<Question[]> {
   });
 }
 
-export async function saveQuestion(document: vscode.TextDocument) {
-  const text = document.getText();
-  const questionNumberMatch = text.match(/^# Question (\d+)/im);
-
-  if (!questionNumberMatch) {
-    vscode.window.showErrorMessage(
-      "Could not save: Question number not found in the document."
-    );
-    return;
-  }
-  const questionNumber = parseInt(questionNumberMatch[1], 10);
-
-  const parsed = matter(text);
-  const content = parsed.content;
-
-  const description = parsed.data.description;
-
-  let proposition = "";
-  let stepByStep = "";
-  let answer = "";
-
-  const propositionContent = content.split("## Proposition")[1];
-  if (propositionContent === undefined) {
-    vscode.window.showErrorMessage(
-      "Could not save: '## Proposition' section not found."
-    );
-    return;
-  }
-
-  if (propositionContent.includes("## Step-by-step")) {
-    const stepByStepSplit = propositionContent.split("## Step-by-step");
-    proposition = stepByStepSplit[0].trim();
-    const answerSplit = stepByStepSplit[1].split("## Answer");
-    if (answerSplit[1] === undefined) {
-      vscode.window.showErrorMessage(
-        "Could not save: '## Answer' section not found after '## Step-by-step'."
-      );
-      return;
-    }
-    stepByStep = answerSplit[0].trim();
-    answer = answerSplit[1].trim();
-  } else {
-    const answerSplit = propositionContent.split("## Answer");
-    if (answerSplit[1] === undefined) {
-      vscode.window.showErrorMessage(
-        "Could not save: '## Answer' section not found."
-      );
-      return;
-    }
-    proposition = answerSplit[0].trim();
-    answer = answerSplit[1].trim();
-  }
-
+export async function saveQuestion(question: Question) {
   const dbPath = path.join(
     vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
     "src",
@@ -1311,14 +1239,14 @@ export async function saveQuestion(document: vscode.TextDocument) {
   db.run(
     UPDATE_QUESTION_SQL,
     [
-      parsed.data.discipline,
-      parsed.data.source,
-      description,
-      proposition,
-      stepByStep,
-      answer,
-      parsed.data.tags.join(", "),
-      questionNumber,
+      question.discipline,
+      question.source,
+      question.description,
+      question.proposition,
+      question.step_by_step,
+      question.answer,
+      question.tags.join(", "),
+      question.question_number,
     ],
     function (err) {
       if (err) {
@@ -1327,7 +1255,7 @@ export async function saveQuestion(document: vscode.TextDocument) {
         );
       } else {
         vscode.window.showInformationMessage(
-          `Question ${questionNumber} updated successfully.`
+          `Question ${question.question_number} updated successfully.`
         );
       }
     }
@@ -1573,6 +1501,8 @@ export function deactivate() { }
 // FILE: src/Question.ts
 // =================================================================================================
 
+import matter from "gray-matter";
+
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const STATUS_NA = "NA";
 const STATUS_SA = "SA";
@@ -1608,9 +1538,11 @@ export class Question {
     this.proposition = dbData.proposition;
     this.step_by_step = dbData.step_by_step;
     this.answer = dbData.answer;
-    this.tags = dbData.tags
-      ? dbData.tags.split(",").map((tag: string) => tag.trim())
-      : [];
+    this.tags = Array.isArray(dbData.tags)
+      ? dbData.tags
+      : dbData.tags
+        ? dbData.tags.split(",").map((tag: string) => tag.trim())
+                : [];
 
 
     const codeVec: number[] = JSON.parse(dbData.code_vec_json);
@@ -1683,8 +1615,133 @@ export class Question {
   private calculateAttemptsSummary(code_vector: number[]) {
     return `${this.attemptsWithoutHelp + this.attemptsWithHelp}; ${this.attemptsWithoutHelp}; ${this.attemptsWithHelp}`;
   }
+
+  public generateContentFromQuestion(): string {
+    const tags = Array.isArray(this.tags) ? JSON.stringify(this.tags) : this.tags;
+    return `---
+discipline: ${JSON.stringify(this.discipline)}
+description: ${JSON.stringify(this.description)}
+source: ${JSON.stringify(this.source)}
+tags: ${tags}
+---
+
+# Question ${this.question_number}
+
+## Proposition
+${this.proposition}
+
+## Step-by-step
+${this.step_by_step || ""}
+
+## Answer
+${this.answer}
+`;
+  }
+
+  static _parseFromText(text: string): Partial<Question> {
+    const parsed = matter(text);
+    const content = parsed.content;
+
+    const questionNumberMatch = content.match(/^# Question (\d+)/im);
+    const question_number = questionNumberMatch
+      ? parseInt(questionNumberMatch[1], 10)
+      : -1;
+
+    let proposition = "";
+    let step_by_step = "";
+    let answer = "";
+
+    const propositionContent = content.split("## Proposition")[1];
+    if (propositionContent) {
+      if (propositionContent.includes("## Step-by-step")) {
+        const stepByStepSplit = propositionContent.split("## Step-by-step");
+        proposition = stepByStepSplit[0].trim();
+        const answerSplit = stepByStepSplit[1].split("## Answer");
+        step_by_step = answerSplit[0].trim();
+        answer = answerSplit[1] ? answerSplit[1].trim() : "";
+      } else {
+        const answerSplit = propositionContent.split("## Answer");
+        proposition = answerSplit[0].trim();
+        answer = answerSplit[1] ? answerSplit[1].trim() : "";
+      }
+    }
+
+    return {
+      question_number,
+      discipline: parsed.data.discipline,
+      source: parsed.data.source,
+      description: parsed.data.description,
+      tags: parsed.data.tags,
+      proposition,
+      step_by_step,
+      answer,
+    };
+  }
+
+  static fromText(text: string): Question {
+    const parsedData = Question._parseFromText(text);
+    const dbData = {
+      question_number: parsedData.question_number,
+      discipline: parsedData.discipline,
+      source: parsedData.source,
+      description: parsedData.description,
+      proposition: parsedData.proposition,
+      step_by_step: parsedData.step_by_step,
+      answer: parsedData.answer,
+      tags: parsedData.tags ? (parsedData.tags as string[]).join(", ") : "",
+      code_vec_json: '[]',
+      date_vec_json: '[]'
+    };
+    return new Question(dbData);
+  }
+
+  static validate(questionData: Question): string[] {
+    const errors: string[] = [];
+    if (questionData.question_number === -1) {
+      errors.push("Question number not found in the document.");
+    }
+    if (!questionData.proposition) {
+      errors.push("'## Proposition' section not found.");
+    }
+    if (!questionData.answer) {
+      errors.push("'## Answer' section not found.");
+    }
+    return errors;
+  }
 }
 
+
+// =================================================================================================
+// FILE: src/questionCache.ts
+// =================================================================================================
+
+import { Question } from "./Question";
+import { buildAllQuestions } from "./db";
+
+// The cache is stored in this private, module-level variable.
+let cachedQuestions: Question[] | null = null;
+
+/**
+ * Retrieves all questions, using the cache if available.
+ * If the cache is empty, it populates it by calling buildAllQuestions.
+ */
+export async function getQuestions(): Promise<Question[]> {
+    if (cachedQuestions === null) {
+        console.log("CACHE MISS: Building questions from DB...");
+        cachedQuestions = await buildAllQuestions();
+    } else {
+        console.log("CACHE HIT: Returning cached questions.");
+    }
+    return cachedQuestions;
+}
+
+/**
+ * Clears the cache. This should be called whenever the underlying data changes.
+ */
+export function clearCache(): void {
+    console.log("CACHE CLEARED.");
+    cachedQuestions = null;
+}
 
 // =================================================================================================
 // FILE: src/sidepanelProvider.ts
