@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { updateSnippetCacheFromText } from "../snippetCache";
 import { getWebviewContent } from "../webview";
 import { getPanels } from "./previewQuestion";
 
@@ -15,6 +16,7 @@ export function onDidChangeTextDocument(context: vscode.ExtensionContext) {
                 clearTimeout(debounce);
             }
             debounce = setTimeout(() => {
+                updateSnippetCacheFromText(event.document.getText());
                 panels.forEach((panel) => {
                     if (panel.visible) {
                         panel.webview.html = getWebviewContent(

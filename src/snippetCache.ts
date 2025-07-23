@@ -3,9 +3,20 @@ import { Question } from "./Question";
 // The cache remains a simple map of snippet ID to its content.
 const snippetCache = new Map<string, string>();
 
+export function updateSnippetCacheFromText(text: string): void {
+    const snippetRegex = /<snippet id="(.+?)">([\s\S]*?)<\/snippet>/g;
+    let match;
+    while ((match = snippetRegex.exec(text)) !== null) {
+        const [, id, content] = match;
+        if (snippetCache.has(id.trim())) {
+            console.warn(`Duplicate snippet ID found: "${id.trim()}". Overwriting.`);
+        }
+        snippetCache.set(id.trim(), content.trim());
+    }
+}
+
 export function buildSnippetCache(questions: Question[]): void {
     snippetCache.clear();
-    const snippetRegex = /<snippet id="(.+?)">([\s\S]*?)<\/snippet>/g;
 
     for (const question of questions) {
         // Combine all text fields where a snippet could be defined
@@ -15,14 +26,7 @@ export function buildSnippetCache(questions: Question[]): void {
             question.answer
         ].join('\n');
 
-        let match;
-        while ((match = snippetRegex.exec(contentToSearch)) !== null) {
-            const [, id, content] = match;
-            if (snippetCache.has(id.trim())) {
-                console.warn(`Duplicate snippet ID found: "${id.trim()}". Overwriting.`);
-            }
-            snippetCache.set(id.trim(), content.trim());
-        }
+        updateSnippetCacheFromText(contentToSearch);
     }
     console.log(`Snippet cache built with ${snippetCache.size} items.`);
 }
