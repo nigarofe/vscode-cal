@@ -22,7 +22,7 @@ export function openQuestionByNumberCommand() {
                 return;
             }
 
-            const fileContent = question.content;
+            const fileContent = question.generateContentFromQuestion();
             const doc = await vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' });
             await vscode.window.showTextDocument(doc, { preview: false });
             updateDiagnostics(doc);

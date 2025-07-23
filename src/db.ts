@@ -6,7 +6,6 @@ import {
   UPDATE_QUESTION_SQL,
 } from "./db_sql_queries";
 import { Question } from "./Question";
-import { snippetManager } from "./snippetManager";
 import * as vscode from "vscode";
 
 const dbPath = path.resolve(__dirname, "../src/db.db");
@@ -41,7 +40,6 @@ export async function buildAllQuestions(): Promise<Question[]> {
         reject(`Error querying database: ${err.message}`);
       } else {
         const questions = rows.map((row) => new Question(row));
-        snippetManager.processAllQuestions(questions);
         resolve(questions);
       }
       db.close();

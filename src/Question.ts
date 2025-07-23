@@ -25,7 +25,6 @@ export class Question {
   attemptsWithoutHelp: number;
   attemptsWithHelp: number;
   attemptsSummary: string;
-  content: string;
 
   constructor(dbData: any) {
     // Assign data from the database record
@@ -41,7 +40,6 @@ export class Question {
       : dbData.tags
         ? dbData.tags.split(",").map((tag: string) => tag.trim())
                 : [];
-    this.content = this.generateContentFromQuestion();
 
 
     const codeVec: number[] = JSON.parse(dbData.code_vec_json);
