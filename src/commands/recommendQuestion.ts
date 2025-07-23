@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../questionCache";
 import { Question } from "../Question";
 
 export function recommendQuestionCommand(context: vscode.ExtensionContext) {
@@ -8,7 +8,7 @@ export function recommendQuestionCommand(context: vscode.ExtensionContext) {
     "vscode-cal.recommendQuestion",
     async () => {
       try {
-        const questions = await buildAllQuestions();
+        const questions = await getQuestions();
         let recommendedQuestion: Question | null = null;
         let maxMultiplier = -1;
 

@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../questionCache";
 import { Question } from "../Question";
 import * as path from "path";
 
 export function showRankedQuestionsCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand('vscode-cal.showRankedQuestions', () => {
 
-        buildAllQuestions().then(questions => {
+        getQuestions().then(questions => {
             // Filter out questions where potentialMemoryGainMultiplier is not a number
             // const sortedQuestions = questions.filter(q => typeof q.potentialMemoryGainMultiplier === 'number');
             const sortedQuestions = questions;

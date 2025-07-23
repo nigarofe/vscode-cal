@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { updateDiagnostics } from "../diagnostics";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../questionCache";
 
 export function openQuestionByNumberCommand() {
     return vscode.commands.registerCommand(
@@ -14,7 +14,7 @@ export function openQuestionByNumberCommand() {
                 return;
             }
 
-            const questions = await buildAllQuestions();
+            const questions = await getQuestions();
             const question = questions.find(q => q.question_number === questionNumber);
 
             if (!question) {

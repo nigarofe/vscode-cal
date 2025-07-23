@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../questionCache";
 
 export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.exportQuestionsJson",
         async () => {
             try {
-                const questions = await buildAllQuestions();
+                const questions = await getQuestions();
                 const questionsForJson = questions.map((q) => ({
                     number: q.question_number,
                     discipline: q.discipline,

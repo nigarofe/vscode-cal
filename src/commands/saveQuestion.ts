@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import { saveQuestion } from "../db";
+import { clearCache } from "../questionCache";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
 import { Question } from "../Question";
 
 export function saveQuestionCommand() {
     return vscode.commands.registerCommand(
         "vscode-cal.saveQuestion",
-        () => {
+        async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 vscode.window.showInformationMessage("No active editor to save.");
@@ -27,7 +28,8 @@ export function saveQuestionCommand() {
                 vscode.window.showErrorMessage(`Could not save: ${errors.join(" ")}`);
                 return;
             }
-            saveQuestion(questionData);
+            await saveQuestion(questionData);
+            clearCache();
         }
     );
 }
