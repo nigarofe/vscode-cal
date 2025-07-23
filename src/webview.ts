@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import matter from "gray-matter";
 import markdownit from "markdown-it";
 import katex from "@vscode/markdown-it-katex";
+import { getSnippetById } from "./snippetCache";
 
 function getNonce() {
   let text = "";
@@ -21,13 +22,15 @@ export function getWebviewContent(
   const editor = vscode.window.activeTextEditor;
   const docUri = editor ? editor.document.uri : undefined;
 
+  const { content } = matter(text);
+  const resolvedContent = resolveReferences(content);
+
   const md = new markdownit({
     html: true,
     linkify: true,
     breaks: true,
   }).use(katex);
 
-  const { content } = matter(text);
 
   const defaultImageRenderer = md.renderer.rules.image!;
 
@@ -59,7 +62,7 @@ export function getWebviewContent(
     return defaultImageRenderer(tokens, idx, options, env, self);
   };
 
-  const html = md.render(content);
+  const html = md.render(resolvedContent);
 
   const katexCss = vscode.Uri.joinPath(
     context.extensionUri,
@@ -119,4 +122,11 @@ export function getWebviewContent(
     </body>
     </html>
   `;
+}
+
+
+function resolveReferences(content: string): string {
+  return content.replace(/<ref id="(.+?)"\s*\/>/g, (match, id) => {
+    return getSnippetById(id) || `[Snippet '${id}' not found]`;
+  });
 }

@@ -1,5 +1,6 @@
 import { Question } from "./Question";
 import { buildAllQuestions } from "./db";
+import { buildSnippetCache } from "./snippetCache"; // Import the new function
 
 // The cache is stored in this private, module-level variable.
 let cachedQuestions: Question[] | null = null;
@@ -12,6 +13,7 @@ export async function getQuestions(): Promise<Question[]> {
     if (cachedQuestions === null) {
         console.log("CACHE MISS: Building questions from DB...");
         cachedQuestions = await buildAllQuestions();
+        buildSnippetCache(cachedQuestions);
     } else {
         console.log("CACHE HIT: Returning cached questions.");
     }
@@ -24,4 +26,5 @@ export async function getQuestions(): Promise<Question[]> {
 export function clearCache(): void {
     console.log("CACHE CLEARED.");
     cachedQuestions = null;
+    buildSnippetCache([]);
 }
