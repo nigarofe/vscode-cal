@@ -117,6 +117,16 @@ export function getWebviewContent(
             });
           });
         </script>
+        <style>
+          body {
+            font-size: 1.2em;
+          }
+          img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          }
+        </style>
     </head>
     <body>
         ${html}
