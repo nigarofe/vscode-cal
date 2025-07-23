@@ -11,7 +11,7 @@ export function updateSnippetCacheFromText(text: string): void {
         if (snippetCache.has(id.trim())) {
             console.warn(`Duplicate snippet ID found: "${id.trim()}". Overwriting.`);
         }
-        snippetCache.set(id.trim(), content.trim());
+        snippetCache.set(id.trim(), content);
     }
 }
 

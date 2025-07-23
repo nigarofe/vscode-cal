@@ -23,7 +23,8 @@ export function getWebviewContent(
   const docUri = editor ? editor.document.uri : undefined;
 
   const { content } = matter(text);
-  const resolvedContent = resolveReferences(content);
+  let resolvedContent = resolveReferences(content);
+  resolvedContent = unwrapSnippets(resolvedContent);
 
   const md = new markdownit({
     html: true,
@@ -128,5 +129,11 @@ export function getWebviewContent(
 function resolveReferences(content: string): string {
   return content.replace(/<ref id="(.+?)"\s*\/>/g, (match, id) => {
     return getSnippetById(id) || `[Snippet '${id}' not found]`;
+  });
+}
+
+function unwrapSnippets(content: string): string {
+  return content.replace(/<snippet id="(.+?)">([\s\S]*?)<\/snippet>/g, (match, id, innerContent) => {
+    return innerContent;
   });
 }
