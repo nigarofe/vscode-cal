@@ -46,6 +46,30 @@ export const CREATE_TABLES_SQL = `
         REFERENCES questions(question_number)
         ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS premises (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      name            TEXT    NOT NULL,
+      content         TEXT    NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS curated_views_for_premises (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      premise_id      INTEGER NOT NULL,
+      view_name       TEXT    NOT NULL,
+      FOREIGN KEY (premise_id)
+        REFERENCES premises(id)
+        ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS view_premises (
+      view_id         INTEGER NOT NULL,
+      premise_id      INTEGER NOT NULL,
+      display_order   INTEGER NOT NULL,
+      PRIMARY KEY (view_id, premise_id), -- Ensures a premise can't be in the same view twice
+      FOREIGN KEY (view_id) REFERENCES views(id) ON DELETE CASCADE,
+      FOREIGN KEY (premise_id) REFERENCES premises(id) ON DELETE CASCADE
+    );
 `;
 
 export const GET_QUESTION_BY_NUMBER_SQL = `
