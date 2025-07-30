@@ -7,7 +7,7 @@ import { clearCache } from "../questionCache";
 
 export function createQuestionCommand(context: vscode.ExtensionContext) {
     const command = vscode.commands.registerCommand('vscode-cal.createQuestion', async () => {
-        const dbPath = path.join(context.extensionPath, "src", "db.db");
+        const dbPath = path.join(context.extensionPath, "db.db");
         const db = new sqlite3.Database(dbPath, (err) => {
             if (err) {
                 vscode.window.showErrorMessage(`Error opening database: ${err.message}`);
@@ -42,7 +42,7 @@ export function createQuestionCommand(context: vscode.ExtensionContext) {
                     });
 
                     const fileContent = newQuestion.generateContentFromQuestion();
-                    
+
                     vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' }).then(doc => {
                         vscode.window.showTextDocument(doc);
                         vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);

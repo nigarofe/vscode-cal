@@ -8,7 +8,7 @@ import {
 import { Question } from "./Question";
 import * as vscode from "vscode";
 
-const dbPath = path.resolve(__dirname, "../src/db.db");
+const dbPath = path.resolve(__dirname, "../db.db");
 
 export function initializeDatabase() {
   const db = new sqlite3.Database(dbPath, (err) => {
@@ -50,7 +50,6 @@ export async function buildAllQuestions(): Promise<Question[]> {
 export async function saveQuestion(question: Question) {
   const dbPath = path.join(
     vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
-    "src",
     "db.db"
   );
   const db = new sqlite3.Database(dbPath);
@@ -85,7 +84,6 @@ export async function saveQuestion(question: Question) {
 export async function registerAttempt(questionNumber: number, code: number) {
   const dbPath = path.join(
     vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
-    "src",
     "db.db"
   );
   const db = new sqlite3.Database(dbPath);
