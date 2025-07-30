@@ -7,42 +7,83 @@
                 <link href="${styleResetUri}" rel="stylesheet">
                 <link href="${styleVSCodeUri}" rel="stylesheet">
                 <link href="${styleMainUri}" rel="stylesheet">
-				<title>Question Selector</title>
+				<title>VSCode Cal</title>
 			</head>
 			<body>
 				<div class="container">
-          <h2>Question Management</h2>
-					<div class="input-container">
-						<input type="text" id="question-number" placeholder="Enter question number" />
-					</div>
-          <div class="button-container">
-						<button id="open-question-button" class="primary">Open Question</button>
-					</div>
-					<div class="button-container">
-						<button id="preview-button" class="primary">Preview Question</button>
-					</div>
-					<div class="button-container">
-						<button id="save-button" class="primary">Save Question</button>
-					</div>
-					<div class="button-container">
-						<button id="create-question-button" class="primary">Create Question</button>
-					</div>
-
-          <h2>Recommendation System</h2>
-          <div class="button-container">
-            <button id="recommend-question-button" class="primary">Recommend Question</button>
-          </div>
-          <div class="button-container">
-            <button id="register-attempt-without-help-button" class="secondary-green">Register attempt without help</button>
-          </div>
-          <div class="button-container">
-            <button id="register-attempt-with-help-button" class="secondary-yellow">Register attempt with help</button>
+          <div class="header">
+            <h1 class="title">📚 VSCode Cal</h1>
+            <p class="subtitle">Question Management System</p>
           </div>
 
-          <h2>Analytics</h2>
-          <div class="button-container">
-            <button id="show-ranked-questions-button" class="primary">Show Ranked Questions</button>
-          </div>
+          <section class="section">
+            <h2 class="section-title">
+              <span class="section-icon">📝</span>
+              Question Management
+            </h2>
+            <div class="section-content">
+              <div class="input-group">
+                <label for="question-number" class="input-label">Question Number</label>
+                <input type="text" id="question-number" class="input-field" placeholder="Enter question number..." />
+              </div>
+              
+              <div class="button-grid">
+                <button id="open-question-button" class="btn btn-primary">
+                  <span class="btn-icon">📖</span>
+                  Open Question
+                </button>
+                <button id="preview-button" class="btn btn-primary">
+                  <span class="btn-icon">👁️</span>
+                  Preview Question
+                </button>
+                <button id="save-question-button" class="btn btn-primary">
+                  <span class="btn-icon">💾</span>
+                  Save Question
+                </button>
+                <button id="create-question-button" class="btn btn-primary">
+                  <span class="btn-icon">➕</span>
+                  Create Question
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">
+              <span class="section-icon">🎯</span>
+              Recommendation System
+            </h2>
+            <div class="section-content">
+              <button id="recommend-question-button" class="btn btn-primary btn-full">
+                <span class="btn-icon">💡</span>
+                Recommend Question
+              </button>
+              
+              <div class="attempt-buttons">
+                <button id="register-attempt-without-help-button" class="btn btn-success">
+                  <span class="btn-icon">✅</span>
+                  Solved Without Help
+                </button>
+                <button id="register-attempt-with-help-button" class="btn btn-warning">
+                  <span class="btn-icon">🤝</span>
+                  Solved With Help
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">
+              <span class="section-icon">📊</span>
+              Analytics
+            </h2>
+            <div class="section-content">
+              <button id="show-ranked-questions-button" class="btn btn-primary btn-full">
+                <span class="btn-icon">📈</span>
+                Show Ranked Questions
+              </button>
+            </div>
+          </section>
 				</div>
 
 				<script nonce="${nonce}">
@@ -50,7 +91,7 @@
                     const input = document.getElementById('question-number');
                     const openQuestionButton = document.getElementById('open-question-button');
                     const previewButton = document.getElementById('preview-button');
-                    const saveButton = document.getElementById('save-button');
+                    const saveButton = document.getElementById('save-question-button');
                     const createQuestionButton = document.getElementById('create-question-button');
                     const recommendQuestionButton = document.getElementById('recommend-question-button');
                     const registerAttemptWithoutHelpButton = document.getElementById('register-attempt-without-help-button');
