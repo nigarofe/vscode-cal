@@ -1,7 +1,7 @@
-Your task is to refactor a set of requirements.md files to conform to a structural guideline file.
+Your task is to refactor a set of requirements files to conform to a structural guideline file.
 
   1. Understand the Guideline:
-  First, read the file C:\Users\Nicholas\vscode-cal\features\README.md. This file contains mandatory EARS headings (e.g., ## **(Generic)**,
+  First, read the file c:\Users\Nicholas\vscode-cal\requirements\README.md. This file contains mandatory EARS headings (e.g., ## **(Generic)**,
   ## **(Event driven)**, etc.) that must be used to structure the requirements.
 
   2. Understand the Goal:
@@ -9,8 +9,8 @@ Your task is to refactor a set of requirements.md files to conform to a structur
   guideline file's content or delete the existing requirements.
 
   3. Execution Plan:
-  For each requirements.md file in the C:\Users\Nicholas\vscode-cal\features\ directory, you must:
-      a. Read the existing content of the requirements.md file.
+  For each requirements file in the c:\Users\Nicholas\vscode-cal\requirements\ directory, you must:
+      a. Read the existing content of the requirements file.
       b. Analyze each individual requirement statement to determine which EARS pattern it matches based on its syntax.
            - "When..." corresponds to (Event driven).
            - "While... when..." corresponds to (Complex).
