@@ -5,15 +5,14 @@
       "path": "src"
     },
     {
-      "name": "features",
-      "path": "features"
-    },
-    {
       "name": "vscode-cal",
       "path": "."
     },
     {
       "path": "merged"
+    },
+    {
+      "path": "requirements"
     }
   ],
   "settings": {
