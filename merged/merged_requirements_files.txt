@@ -1,0 +1,292 @@
+# Requirements Folder Structure
+
+├───1_question_management.md
+├───2_render_question.md
+├───3_validation_and_diagnostics.md
+├───4_export.md
+├───5_recommendation_system.md
+├───6_snippets.md
+├───prompt.md
+├───README.md
+└───TODO.md
+
+
+// =================================================================================================
+// FILE: requirements/1_question_management.md
+// =================================================================================================
+
+### **Question Management**
+
+## **(Generic)**
+
+## **(Ubiquitous)**
+
+## **(State driven)**
+
+## **(Event driven)**
+* When a user runs the "openQuestionByNumber" command and enters a question number, the system shall open a new markdown editor.
+
+## **(Optional feature)**
+
+## **(Unwanted behaviour)**
+* If the "openQuestionByNumber" command is run with a non-existent question number, then the system shall show an error message "Question {non_existent_question_number} does not exist.".
+* If the "openQuestionByNumber" command is run with an invalid input like, then the system shall show an error message "Please enter a valid number.".
+* If the "saveQuestion" command is run with invalid content, then the system shall not update the database.
+
+## **(Complex)**
+* While a user has a valid question open in the editor, when the user runs the "saveQuestion" command, the system shall update the question in the satabase and display a success message "Question {question_number} updated successfully.".
+
+// =================================================================================================
+// FILE: requirements/2_render_question.md
+// =================================================================================================
+
+### **Render Question**
+
+## **(Generic)**
+
+## **(Ubiquitous)**
+
+## **(State driven)**
+
+## **(Event driven)**
+  * When I run the "previewQuestion" command, the system shall open a webview panel with the title "Preview Q<question_number>".
+  * When a question is previewed, the system shall render the question's proposition, step-by-step, and answer as HTML.
+
+## **(Optional feature)**
+
+## **(Unwanted behaviour)**
+
+## **(Complex)**
+  * While a question's proposition contains a LaTeX expression, when the question is previewed, the system shall correctly render the LaTeX as a mathematical formula.
+  * While a question's step-by-step section contains a local image `![alt text](images/diagram.png)`, when the question is previewed, the system shall display the image from the workspace.
+
+
+// =================================================================================================
+// FILE: requirements/3_validation_and_diagnostics.md
+// =================================================================================================
+
+### **Validation and Diagnostics**
+
+## **(Generic)**
+
+## **(Ubiquitous)**
+
+## **(State driven)**
+
+## **(Event driven)**
+  * When a user opens a question file, the system shall run diagnostics and display any errors found.
+  * When a user saves a question file, the system shall run diagnostics and display any errors found.
+  * When a user changes the content of a question file, the system shall run diagnostics and display any errors found.
+  * When the editor for question `{question_number}` is opened, the system shall ensure the editor content contains the "## Proposition", "## Step-by-step", and "## Answer" sections.
+
+## **(Optional feature)**
+
+## **(Unwanted behaviour)**
+  * If a question file has no errors, then the system shall not report any diagnostic errors.
+  * If a non-question file is open, then the system shall not run any diagnostics on it.
+  * If a diagnostic error is reported, then the system shall not report the same error multiple times for the same issue.
+
+## **(Complex)**
+  * While a question file is open and is missing a front matter field like "discipline" or "source", when the diagnostics are updated, the system shall report a diagnostic error with the message "Front matter is missing the '<field>' field.".
+  * While a question file is open and the 'tags' field is a string instead of an array, when the diagnostics are updated, the system shall report a diagnostic error with the message "Front matter must have 'tags' as an array.".
+  * While a question file is open and is missing a required heading like "## Proposition" or "## Answer", when the diagnostics are updated, the system shall report a diagnostic error with the message "Markdown body is missing the '<heading>' heading.".
+
+
+// =================================================================================================
+// FILE: requirements/4_export.md
+// =================================================================================================
+
+# **Export**
+
+## **(Generic)**
+
+## **(Ubiquitous)**
+* The system shall ensure the file is valid.
+* The system shall ensure the content has a "questions" key with a list of all questions.
+* The system shall ensure each question has the correct structure, including "number", "discipline", "source", "description", "proposition", "step-by-step", "answer", "tags", and "spaced_repetition_variables".
+
+## **(State driven)**
+
+## **(Event driven)**
+* When I run the "exportQuestionsJson" command, the system shall create a new JSON file in the "src/.json" directory.
+* When the "exportQuestionsJson" command is run, the system shall name the file starting with a timestamp and ending with "_questions.json".
+
+## **(Optional feature)**
+
+## **(Unwanted behaviour)**
+
+## **(Complex)**
+
+
+// =================================================================================================
+// FILE: requirements/5_recommendation_system.md
+// =================================================================================================
+
+### **Recommendation**
+
+## **(Generic)**
+
+## **(Ubiquitous)**
+  * The system shall prioritize question recommendations based on their potential memory gain multiplier.
+
+## **(State driven)**
+
+## **(Event driven)**
+  * When the "recommendQuestion" command is run, the system shall identify the question with the highest "potentialMemoryGainMultiplier".
+  * When a question is recommended, the system shall open a new markdown editor with the content of the recommended question.
+  * When an attempt is successfully registered, the system shall show a success message confirming the attempt was registered.
+  * When the "showAllQuestions" command is run, the system shall open a webview panel with the title "All Questions".
+  * When the "All Questions" panel is opened, the system shall display a table of questions sorted in descending order by their "Potential Memory Gain Multiplier".
+
+## **(Optional feature)**
+
+## **(Unwanted behaviour)**
+  * If the "recommendQuestion" command is run and all questions have a "potentialMemoryGainMultiplier" less than 1.0 or a non-numeric status, then the system shall show an information message stating "No questions are due for review at the moment. Great job!".
+  * If the "recommendQuestion" command is run and the questions table in the database is empty, then the system shall show an error message stating "No questions found in the database to recommend.".
+  * If an attempt is registered with no active editor, then the system shall show an information message stating "No active editor.".
+  * If an attempt is registered for a non-question file, then the system shall show an error message stating "Could not determine question number.".
+
+## **(Complex)**
+  * While question 12 has a "potentialMemoryGainMultiplier" of 2.5, which is the highest among all questions, when the "recommendQuestion" command is run, the system shall open question 12 in a new editor.
+  * While I have question number 7 open in the editor, when I register an attempt as "with help" using the command palette, the system shall record an attempt for question 7 with code 0.
+  * While I have question number 7 open in the editor, when I register an attempt as "without help" using the command palette, the system shall record an attempt for question 7 with code 1.
+  * While the "All Questions" panel is open, when a user clicks on the table row for question number 7, the system shall execute the "openQuestionByNumber" command for question 7.
+
+
+// =================================================================================================
+// FILE: requirements/6_snippets.md
+// =================================================================================================
+
+### **Snippets**
+
+## **(Generic)**
+* The system shall support reusable content snippets that can be defined in questions and referenced elsewhere.
+* Snippets shall be identified by unique string identifiers.
+
+## **(Ubiquitous)**
+* The system shall build and maintain a snippet cache containing all snippet definitions from all questions.
+* The system shall process snippet definitions and references during question rendering.
+
+## **(State driven)**
+* While the snippet cache is being built, the system shall scan all question content (proposition, step-by-step, and answer sections) for snippet definitions.
+* While a snippet cache exists, the system shall use cached snippet content for resolving references.
+
+## **(Event driven)**
+* When the question cache is rebuilt, the system shall rebuild the snippet cache.
+* When a question is previewed, the system shall resolve all snippet references in the content.
+* When snippet content is rendered, the system shall unwrap snippet definitions to display only the inner content.
+
+## **(Optional feature)**
+
+## **(Unwanted behaviour)**
+* If a snippet reference points to a non-existent snippet ID, then the system shall display the error message "[Snippet '{snippet_id}' not found]" in place of the reference.
+* If duplicate snippet IDs are found during cache building, then the system shall overwrite the previous snippet with the same ID and log a warning message.
+* If a snippet definition contains malformed syntax, then the system shall not include it in the snippet cache.
+
+## **(Complex)**
+* While a question contains the snippet definition `<snippet id="newtons-law">F = ma</snippet>` in its step-by-step section, when the snippet cache is built, the system shall store the content "F = ma" with the identifier "newtons-law".
+* While a question contains the reference `<ref id="newtons-law" />` in its proposition, when the question is previewed, the system shall replace the reference with the content "F = ma" from the snippet cache.
+* While a question contains both snippet definitions and references, when the question is rendered, the system shall first resolve all references with cached content, then unwrap all snippet definitions to show only their inner content.
+* While processing question content for rendering, when a snippet definition `<snippet id="formula">E = mc²</snippet>` is encountered, the system shall display only "E = mc²" in the rendered output without the snippet tags.
+* While the snippet cache contains 5 snippets, when the cache is rebuilt, the system shall log "Snippet cache built with 5 items."
+
+
+// =================================================================================================
+// FILE: requirements/prompt.md
+// =================================================================================================
+
+Your task is to refactor a set of requirements files to conform to a structural guideline file.
+
+  1. Understand the Guideline:
+  First, read the file c:\Users\Nicholas\vscode-cal\requirements\README.md. This file contains mandatory EARS headings (e.g., ## **(Generic)**,
+  ## **(Event driven)**, etc.) that must be used to structure the requirements.
+
+  2. Understand the Goal:
+  The goal is to preserve all existing requirements while organizing them under the correct EARS headings. You must not simply copy the
+  guideline file's content or delete the existing requirements.
+
+  3. Execution Plan:
+  For each requirements file in the c:\Users\Nicholas\vscode-cal\requirements\ directory, you must:
+      a. Read the existing content of the requirements file.
+      b. Analyze each individual requirement statement to determine which EARS pattern it matches based on its syntax.
+           - "When..." corresponds to (Event driven).
+           - "While... when..." corresponds to (Complex).
+           - "If... then..." corresponds to (Unwanted behaviour).
+           - "The system shall..." corresponds to (Ubiquitous).
+           - etc.
+      c. Re-write the file so that it begins with the full, ordered list of mandatory EARS headings extracted from the README.md.
+      d. Place each existing requirement from the original file under its corresponding new heading.
+      e. If no requirements match a specific heading for a given file, leave that heading blank.
+
+// =================================================================================================
+// FILE: requirements/README.md
+// =================================================================================================
+
+# Features
+
+This directory contains the feature definitions for the VS Code extension. Each feature is described in a dedicated file, which includes requirements outlining the feature's behavior. These requirements are used for acceptance testing and to ensure that the software meets the specified functionality.
+
+## Feature Overview
+
+The extension is composed of the following features:
+
+*   **Question Management**: Handles the creation, retrieval, and updating of questions. This includes opening questions in the editor, saving changes to the database, and managing the content of question files.
+*   **Render Question**: Responsible for previewing questions in a webview panel. It renders the question's content, including Markdown, LaTeX, and images, into HTML.
+*   **Validation and Diagnostics**: Provides real-time validation of question files. It checks for errors in the front matter and Markdown body, and displays diagnostic information in the editor.
+*   **Export**: Allows for the exporting of questions from the database into a JSON file. This is useful for backups, sharing, or external processing.
+*   **Recommendation System**: Implements a spaced repetition-based question recommendation system. It suggests questions for review based on their potential memory gain and provides a view of all questions sorted by this metric.
+
+## Implementation Order
+
+It is recommended that the features be implemented and maintained in the following order to ensure a logical development progression:
+
+1.  **Question Management**
+2.  **Render Question**
+3.  **Validation and Diagnostics**
+4.  **Export**
+5.  **Recommendation**
+
+<details>
+<summary>Writing Feature Requirements (EARS)</summary>
+
+To ensure clarity and consistency, each requirements file must contain dedicated sections for the following EARS (Easy Approach to Requirements Syntax) patterns. This explicitly defines which patterns are being used for the system's requirements.
+
+Source: [EARS (Easy Approach to Requirements Syntax)](https://alistairmavin.com/ears/)
+[Kiro](https://kiro.dev/docs/specs/concepts/)
+
+---
+## **(Generic)**
+While `<optional pre-condition>`, when `<optional trigger>`, the `<system name>` shall `<system response>`
+
+---
+## **(Ubiquitous)**
+The `<system name>` shall `<system response>`
+
+---
+## **(State driven)**
+While `<precondition(s)>`, the `<system name>` shall `<system response>`
+
+---
+## **(Event driven)**
+When `<trigger>`, the `<system name>` shall `<system response>`
+
+---
+## **(Optional feature)**
+Where `<feature is included>`, the `<system name>` shall `<system response>`
+
+---
+## **(Unwanted behaviour)**
+If `<trigger>`, then the `<system name>` shall `<system response>`
+
+---
+## **(Complex)**
+While `<precondition(s)>`, when `<trigger>`, the `<system name>` shall `<system response>`
+
+</details>
+
+
+// =================================================================================================
+// FILE: requirements/TODO.md
+// =================================================================================================
+
+

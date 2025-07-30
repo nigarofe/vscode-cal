@@ -2,9 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 const projectRoot = path.join(__dirname, '..');
-const featuresDir = path.join(projectRoot, 'features');
+const requirementsDir = path.join(projectRoot, 'requirements');
 const outputDir = __dirname;
-const outputFile = path.join(outputDir, 'merged_features_files.txt');
+const outputFile = path.join(outputDir, 'merged_requirements_files.txt');
 
 function generateTree(dir, prefix = '') {
     const files = fs.readdirSync(dir);
@@ -42,16 +42,16 @@ function getAllFiles(dirPath, arrayOfFiles = []) {
 }
 
 try {
-    console.log('Generating features folder structure...');
-    const folderTree = generateTree(featuresDir);
-    const architecturalMap = `# Features Folder Structure\n\n${folderTree}\n`;
+    console.log('Generating requirements folder structure...');
+    const folderTree = generateTree(requirementsDir);
+    const architecturalMap = `# Requirements Folder Structure\n\n${folderTree}\n`;
 
-    console.log('Finding all files in features folder...');
-    const featureFiles = getAllFiles(featuresDir);
+    console.log('Finding all files in requirements folder...');
+    const requirementFiles = getAllFiles(requirementsDir);
     let mergedContent = architecturalMap;
 
-    console.log(`Found ${featureFiles.length} files. Merging...`);
-    featureFiles.forEach(filePath => {
+    console.log(`Found ${requirementFiles.length} files. Merging...`);
+    requirementFiles.forEach(filePath => {
         const relativePath = path.relative(projectRoot, filePath);
         const fileContent = fs.readFileSync(filePath, 'utf8');
         
@@ -62,7 +62,7 @@ try {
     });
 
     fs.writeFileSync(outputFile, mergedContent);
-    console.log(`Successfully merged ${featureFiles.length} files into ${outputFile}`);
+    console.log(`Successfully merged ${requirementFiles.length} files into ${outputFile}`);
 } catch (error) {
     console.error('Error merging files:', error);
 }

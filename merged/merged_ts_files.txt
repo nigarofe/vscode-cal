@@ -10,30 +10,8 @@
 ├───.vscode-test.mjs
 ├───.vscodeignore
 ├───CHANGELOG.md
+├───db.db
 ├───eslint.config.mjs
-├───features
-│   ├───export
-│   │   ├───design.md
-│   │   ├───requirements.md
-│   │   └───tasks.md
-│   ├───prompt.md
-│   ├───question-management
-│   │   ├───design.md
-│   │   ├───requirements.md
-│   │   └───tasks.md
-│   ├───README.md
-│   ├───recommendation
-│   │   ├───design.md
-│   │   ├───requirements.md
-│   │   └───tasks.md
-│   ├───render-question
-│   │   ├───design.md
-│   │   ├───requirements.md
-│   │   └───tasks.md
-│   └───validation-and-diagnostics
-│       ├───design.md
-│       ├───requirements.md
-│       └───tasks.md
 ├───images
 │   ├───diagram.png
 │   └───icon.svg
@@ -45,11 +23,22 @@
 ├───package-lock.json
 ├───package.json
 ├───README.md
+├───requirements
+│   ├───1_question_management.md
+│   ├───2_render_question.md
+│   ├───3_validation_and_diagnostics.md
+│   ├───4_export.md
+│   ├───5_recommendation_system.md
+│   ├───6_snippets.md
+│   ├───prompt.md
+│   ├───README.md
+│   └───TODO.md
 ├───src
 │   ├───.json
 │   │   ├───2025-07-17T16-01-21_461Z_questions.json
 │   │   ├───2025-07-21T17-46-29_121Z_questions.json
 │   │   └───question_schema.json
+│   ├───Cache.ts
 │   ├───commands
 │   │   ├───commandsLoader.ts
 │   │   ├───createQuestion.ts
@@ -61,13 +50,11 @@
 │   │   ├───registerAttempt.ts
 │   │   ├───saveQuestion.ts
 │   │   └───showRankedQuestions.ts
-│   ├───db.db
 │   ├───db.ts
 │   ├───db_sql_queries.ts
 │   ├───diagnostics.ts
 │   ├───extension.ts
 │   ├───Question.ts
-│   ├───questionCache.ts
 │   ├───sidepanel.html
 │   ├───sidepanelProvider.ts
 │   └───webview.ts
@@ -409,9 +396,123 @@
     │   ├───Interacoes_conteudo.json
     │   ├───Interface_Implementations.json
     │   └───Text_Generation.json
-    ├───README.md
-    └───_changelog.md
+    └───README.md
 
+
+// =================================================================================================
+// FILE: src/Cache.ts
+// =================================================================================================
+
+import { Question } from "./Question";
+import * as sqlite3 from "sqlite3";
+import * as path from "path";
+import * as vscode from "vscode";
+import { GET_QUESTIONS_SQL } from "./db_sql_queries";
+
+class Cache {
+    private questionsCache: Question[] | null = null;
+    private snippetCache = new Map<string, string>();
+
+    async getQuestions(): Promise<Question[]> {
+        if (this.questionsCache === null) {
+            console.log("CACHE MISS: Building questions and snippets from DB...");
+            this.questionsCache = await this.buildQuestionsCache();
+            this.buildSnippetCache(this.questionsCache);
+        } else {
+            console.log("CACHE HIT: Returning cached questions.");
+        }
+        return this.questionsCache;
+    }
+
+    getSnippetById(id: string): string | undefined {
+        return this.snippetCache.get(id);
+    }
+
+    async rebuildCache(): Promise<void> {
+        console.log("REBUILDING CACHE: Clearing and building questions and snippets from DB...");
+        this.questionsCache = null;
+        this.snippetCache.clear();
+        this.questionsCache = await this.buildQuestionsCache();
+        this.buildSnippetCache(this.questionsCache);
+    }
+
+    private async buildQuestionsCache(): Promise<Question[]> {
+        const dbPath = path.join(
+            vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
+            "db.db"
+        );
+        return new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+                if (err) {
+                    reject(`Error opening database: ${err.message}`);
+                }
+            });
+
+            db.all(GET_QUESTIONS_SQL, [], (err, rows: any[]) => {
+                if (err) {
+                    reject(`Error querying database: ${err.message}`);
+                } else {
+                    const questions = rows.map((row) => new Question(row));
+                    resolve(questions);
+                }
+                db.close();
+            });
+        });
+    }
+
+    private buildSnippetCache(questions: Question[]): void {
+        this.snippetCache.clear();
+
+        const snippetRegex = /<snippet id="(.+?)">([\s\S]*?)<\/snippet>/g;
+
+        for (const question of questions) {
+            const contentToSearch = this.getQuestionSearchContent(question);
+            let match;
+
+            while ((match = snippetRegex.exec(contentToSearch)) !== null) {
+                const [, id, content] = match;
+                if (this.snippetCache.has(id.trim())) {
+                    console.warn(`Duplicate snippet ID found: "${id.trim()}". Overwriting.`);
+                }
+                this.snippetCache.set(id.trim(), content);
+            }
+
+            // Reset regex lastIndex for next question
+            snippetRegex.lastIndex = 0;
+        }
+        console.log(`Snippet cache built with ${this.snippetCache.size} items.`);
+        // Log the first item in the snippetCache, if any
+        const firstEntry = this.snippetCache.entries().next();
+        if (!firstEntry.done) {
+            const [firstKey, firstValue] = firstEntry.value;
+            console.log(`First snippet: id="${firstKey}", content="${firstValue}"`);
+        }
+    }
+
+    private getQuestionSearchContent(question: Question): string {
+        return [
+            question.proposition,
+            question.step_by_step,
+            question.answer
+        ].join('\n');
+    }
+}
+
+// Create a singleton instance
+const cache = new Cache();
+
+// Export the methods from the singleton instance for backward compatibility
+export async function getQuestions(): Promise<Question[]> {
+    return cache.getQuestions();
+}
+
+export function getSnippetById(id: string): string | undefined {
+    return cache.getSnippetById(id);
+}
+
+export async function rebuildCache(): Promise<void> {
+    return cache.rebuildCache();
+}
 
 // =================================================================================================
 // FILE: src/commands/commandsLoader.ts
@@ -433,7 +534,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(exportQuestionsJsonCommand(context));
     context.subscriptions.push(openQuestionByNumberCommand());
     context.subscriptions.push(previewQuestionCommand(context));
-    context.subscriptions.push(saveQuestionCommand());
+    context.subscriptions.push(saveQuestionCommand(context));
     context.subscriptions.push(registerAttemptCommand());
     context.subscriptions.push(recommendQuestionCommand(context));
     context.subscriptions.push(showRankedQuestionsCommand(context));
@@ -450,53 +551,82 @@ import * as sqlite3 from "sqlite3";
 import * as path from "path";
 import { CREATE_QUESTION_SQL, GET_MAX_QUESTION_NUMBER_SQL } from "../db_sql_queries";
 import { Question } from "../Question";
+import { rebuildCache } from "../Cache";
+import { updatePreviewPanels } from "./previewQuestion";
 
 export function createQuestionCommand(context: vscode.ExtensionContext) {
     const command = vscode.commands.registerCommand('vscode-cal.createQuestion', async () => {
-        const dbPath = path.join(context.extensionPath, "src", "db.db");
-        const db = new sqlite3.Database(dbPath, (err) => {
-            if (err) {
-                vscode.window.showErrorMessage(`Error opening database: ${err.message}`);
-                return;
-            }
-        });
+        try {
+            const dbPath = path.join(context.extensionPath, "db.db");
 
-        db.get(GET_MAX_QUESTION_NUMBER_SQL, [], (err, row: { max_number: number }) => {
-            if (err) {
-                vscode.window.showErrorMessage(`Error getting max question number: ${err.message}`);
-                db.close();
-                return;
-            }
+            // Get max question number
+            const maxNumber = await new Promise<number>((resolve, reject) => {
+                const db = new sqlite3.Database(dbPath, (err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                });
 
-            const newQuestionNumber = (row.max_number || 0) + 1;
-
-            db.run(CREATE_QUESTION_SQL, ['', '', ``, '', '', '', ''], function (err) {
-                if (err) {
-                    vscode.window.showErrorMessage(`Error creating new question: ${err.message}`);
-                } else {
-                    const newQuestion = new Question({
-                        question_number: newQuestionNumber,
-                        discipline: '',
-                        source: '',
-                        description: '',
-                        proposition: '',
-                        step_by_step: '',
-                        answer: '',
-                        tags: '[]',
-                        code_vec_json: '[]',
-                        date_vec_json: '[]'
-                    });
-
-                    const fileContent = newQuestion.generateContentFromQuestion();
-                    
-                    vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' }).then(doc => {
-                        vscode.window.showTextDocument(doc);
-                        vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);
-                    });
-                }
-                db.close();
+                db.get(GET_MAX_QUESTION_NUMBER_SQL, [], (err, row: { max_number: number }) => {
+                    if (err) {
+                        db.close();
+                        reject(err);
+                    } else {
+                        db.close();
+                        resolve(row?.max_number || 0);
+                    }
+                });
             });
-        });
+
+            const newQuestionNumber = maxNumber + 1;
+
+            // Create new question in database
+            await new Promise<void>((resolve, reject) => {
+                const db = new sqlite3.Database(dbPath, (err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                });
+
+                db.run(CREATE_QUESTION_SQL, ['', '', ``, '', '', '', ''], function (err) {
+                    db.close();
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+
+            // Create new question object and open in editor
+            const newQuestion = new Question({
+                question_number: newQuestionNumber,
+                discipline: '',
+                source: '',
+                description: '',
+                proposition: '',
+                step_by_step: '',
+                answer: '',
+                tags: '[]',
+                code_vec_json: '[]',
+                date_vec_json: '[]'
+            });
+
+            const fileContent = newQuestion.generateContentFromQuestion();
+
+            const doc = await vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' });
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);
+
+            await rebuildCache();
+
+            // Update preview panels with new cached data
+            await updatePreviewPanels(context);
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Error creating question: ${error.message}`);
+        }
     });
 
     return command;
@@ -509,14 +639,14 @@ export function createQuestionCommand(context: vscode.ExtensionContext) {
 
 import * as vscode from "vscode";
 import * as path from "path";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../Cache";
 
 export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.exportQuestionsJson",
         async () => {
             try {
-                const questions = await buildAllQuestions();
+                const questions = await getQuestions();
                 const questionsForJson = questions.map((q) => ({
                     number: q.question_number,
                     discipline: q.discipline,
@@ -622,7 +752,7 @@ export function onDidChangeTextDocument(context: vscode.ExtensionContext) {
 
 import * as vscode from "vscode";
 import { updateDiagnostics } from "../diagnostics";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../Cache";
 
 export function openQuestionByNumberCommand() {
     return vscode.commands.registerCommand(
@@ -636,7 +766,7 @@ export function openQuestionByNumberCommand() {
                 return;
             }
 
-            const questions = await buildAllQuestions();
+            const questions = await getQuestions();
             const question = questions.find(q => q.question_number === questionNumber);
 
             if (!question) {
@@ -670,13 +800,14 @@ async function askForQuestionNumber(): Promise<number> {
 
 import * as vscode from "vscode";
 import { getWebviewContent } from "../webview";
+import { getQuestions } from "../Cache";
 
 let panels: vscode.WebviewPanel[] = [];
 
 export function previewQuestionCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.previewQuestion",
-        () => {
+        async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 vscode.window.showInformationMessage("No active editor");
@@ -685,7 +816,22 @@ export function previewQuestionCommand(context: vscode.ExtensionContext) {
 
             const text = editor.document.getText();
             const questionNumberMatch = text.match(/^# Question (\d+)/im);
-            const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
+
+            if (!questionNumberMatch) {
+                vscode.window.showErrorMessage("Could not find question number in the current document");
+                return;
+            }
+
+            const questionNumber = parseInt(questionNumberMatch[1]);
+
+            // Get question from cache instead of using editor content
+            const questions = await getQuestions();
+            const question = questions.find(q => q.question_number === questionNumber);
+
+            if (!question) {
+                vscode.window.showErrorMessage(`Question number ${questionNumber} not found in cache`);
+                return;
+            }
 
             const roots = [
                 context.extensionUri,
@@ -714,8 +860,10 @@ export function previewQuestionCommand(context: vscode.ExtensionContext) {
                 context.subscriptions
             );
 
+            // Use cached question content instead of editor content
+            const cachedContent = question.generateContentFromQuestion();
             panel.webview.html = getWebviewContent(
-                editor.document.getText(),
+                cachedContent,
                 panel,
                 context
             );
@@ -727,6 +875,31 @@ export function getPanels() {
     return panels;
 }
 
+export async function updatePreviewPanels(context: vscode.ExtensionContext) {
+    const questions = await getQuestions();
+
+    panels.forEach((panel) => {
+        if (panel.visible) {
+            // Extract question number from panel title
+            const titleMatch = panel.title.match(/Preview Q(\d+)/);
+            if (titleMatch) {
+                const questionNumber = parseInt(titleMatch[1]);
+                const question = questions.find(q => q.question_number === questionNumber);
+
+                if (question) {
+                    // Use cached question content to update the panel
+                    const cachedContent = question.generateContentFromQuestion();
+                    panel.webview.html = getWebviewContent(
+                        cachedContent,
+                        panel,
+                        context
+                    );
+                }
+            }
+        }
+    });
+}
+
 
 // =================================================================================================
 // FILE: src/commands/recommendQuestion.ts
@@ -734,7 +907,7 @@ export function getPanels() {
 
 import * as vscode from "vscode";
 import * as path from "path";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../Cache";
 import { Question } from "../Question";
 
 export function recommendQuestionCommand(context: vscode.ExtensionContext) {
@@ -742,7 +915,7 @@ export function recommendQuestionCommand(context: vscode.ExtensionContext) {
     "vscode-cal.recommendQuestion",
     async () => {
       try {
-        const questions = await buildAllQuestions();
+        const questions = await getQuestions();
         let recommendedQuestion: Question | null = null;
         let maxMultiplier = -1;
 
@@ -780,6 +953,7 @@ export function recommendQuestionCommand(context: vscode.ExtensionContext) {
 
 import * as vscode from "vscode";
 import { registerAttempt } from "../db";
+import { rebuildCache } from "../Cache";
 
 export function registerAttemptCommand() {
     return vscode.commands.registerCommand(
@@ -813,7 +987,8 @@ export function registerAttemptCommand() {
                 }
             }
 
-            registerAttempt(questionNumber, attemptCode);
+            await registerAttempt(questionNumber, attemptCode);
+            await rebuildCache();
         }
     );
 }
@@ -824,13 +999,15 @@ export function registerAttemptCommand() {
 
 import * as vscode from "vscode";
 import { saveQuestion } from "../db";
+import { rebuildCache } from "../Cache";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
 import { Question } from "../Question";
+import { updatePreviewPanels } from "./previewQuestion";
 
-export function saveQuestionCommand() {
+export function saveQuestionCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.saveQuestion",
-        () => {
+        async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 vscode.window.showInformationMessage("No active editor to save.");
@@ -851,7 +1028,11 @@ export function saveQuestionCommand() {
                 vscode.window.showErrorMessage(`Could not save: ${errors.join(" ")}`);
                 return;
             }
-            saveQuestion(questionData);
+            await saveQuestion(questionData);
+            await rebuildCache();
+
+            // Update preview panels with new cached data
+            await updatePreviewPanels(context);
         }
     );
 }
@@ -862,14 +1043,14 @@ export function saveQuestionCommand() {
 // =================================================================================================
 
 import * as vscode from "vscode";
-import { buildAllQuestions } from "../db";
+import { getQuestions } from "../Cache";
 import { Question } from "../Question";
 import * as path from "path";
 
 export function showRankedQuestionsCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand('vscode-cal.showRankedQuestions', () => {
 
-        buildAllQuestions().then(questions => {
+        getQuestions().then(questions => {
             // Filter out questions where potentialMemoryGainMultiplier is not a number
             // const sortedQuestions = questions.filter(q => typeof q.potentialMemoryGainMultiplier === 'number');
             const sortedQuestions = questions;
@@ -1183,15 +1364,20 @@ import * as sqlite3 from "sqlite3";
 import * as path from "path";
 import {
   CREATE_TABLES_SQL,
-  GET_QUESTIONS_SQL,
   UPDATE_QUESTION_SQL,
 } from "./db_sql_queries";
 import { Question } from "./Question";
 import * as vscode from "vscode";
 
-const dbPath = path.resolve(__dirname, "../src/db.db");
+function getDbPath(): string {
+  return path.join(
+    vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
+    "db.db"
+  );
+}
 
 export function initializeDatabase() {
+  const dbPath = getDbPath();
   const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
       console.error(
@@ -1208,85 +1394,67 @@ export function initializeDatabase() {
   return db;
 }
 
-export async function buildAllQuestions(): Promise<Question[]> {
+export async function saveQuestion(question: Question): Promise<void> {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
-      if (err) {
-        reject(`Error opening database: ${err.message}`);
-      }
-    });
+    const dbPath = getDbPath();
+    const db = new sqlite3.Database(dbPath);
 
-    db.all(GET_QUESTIONS_SQL, [], (err, rows: any[]) => {
-      if (err) {
-        reject(`Error querying database: ${err.message}`);
-      } else {
-        const questions = rows.map((row) => new Question(row));
-        resolve(questions);
+    db.run(
+      UPDATE_QUESTION_SQL,
+      [
+        question.discipline,
+        question.source,
+        question.description,
+        question.proposition,
+        question.step_by_step,
+        question.answer,
+        question.tags.join(", "),
+        question.question_number,
+      ],
+      function (err) {
+        if (err) {
+          vscode.window.showErrorMessage(
+            `Error updating question: ${err.message}`
+          );
+          db.close();
+          reject(err);
+        } else {
+          vscode.window.showInformationMessage(
+            `Question ${question.question_number} updated successfully.`
+          );
+          db.close();
+          resolve();
+        }
       }
-      db.close();
-    });
+    );
   });
 }
 
-export async function saveQuestion(question: Question) {
-  const dbPath = path.join(
-    vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
-    "src",
-    "db.db"
-  );
-  const db = new sqlite3.Database(dbPath);
+export async function registerAttempt(questionNumber: number, code: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const dbPath = getDbPath();
+    const db = new sqlite3.Database(dbPath);
 
-  db.run(
-    UPDATE_QUESTION_SQL,
-    [
-      question.discipline,
-      question.source,
-      question.description,
-      question.proposition,
-      question.step_by_step,
-      question.answer,
-      question.tags.join(", "),
-      question.question_number,
-    ],
-    function (err) {
-      if (err) {
-        vscode.window.showErrorMessage(
-          `Error updating question: ${err.message}`
-        );
-      } else {
-        vscode.window.showInformationMessage(
-          `Question ${question.question_number} updated successfully.`
-        );
+    db.run(
+      "INSERT INTO attempts (question_number, code) VALUES (?, ?)",
+      [questionNumber, code],
+      function (err) {
+        if (err) {
+          vscode.window.showErrorMessage(
+            `Error registering attempt: ${err.message}`
+          );
+          db.close();
+          reject(err);
+        } else {
+          vscode.window.showInformationMessage(
+            `Attempt for question ${questionNumber} registered successfully.`
+          );
+          db.close();
+          resolve();
+        }
       }
-    }
-  );
-  db.close();
-}
-
-export async function registerAttempt(questionNumber: number, code: number) {
-  const dbPath = path.join(
-    vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
-    "src",
-    "db.db"
-  );
-  const db = new sqlite3.Database(dbPath);
-
-  db.run(
-    "INSERT INTO attempts (question_number, code) VALUES (?, ?)",
-    [questionNumber, code],
-    function (err) {
-      if (err) {
-        vscode.window.showErrorMessage(
-          `Error registering attempt: ${err.message}`
-        );
-      } else {
-        vscode.window.showInformationMessage(
-          `Attempt for question ${questionNumber} registered successfully.`
-        );
-      }
-    }
-  );
-  db.close();
+    );
+  });
 }
 
 
@@ -1483,6 +1651,19 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(SidepanelProvider.viewType, sidepanelProvider)
   );
+
+  // Automatically open and preview question 1 on extension activation
+  setTimeout(async () => {
+    try {
+      await vscode.commands.executeCommand("vscode-cal.openQuestionByNumber", 1);
+      // Small delay to ensure the document is opened before previewing
+      setTimeout(() => {
+        vscode.commands.executeCommand("vscode-cal.previewQuestion");
+      }, 500);
+    } catch (error) {
+      console.error("Failed to auto-open question 1:", error);
+    }
+  }, 1000);
 
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((doc) => updateDiagnostics(doc))
@@ -1712,38 +1893,6 @@ ${this.answer}
 
 
 // =================================================================================================
-// FILE: src/questionCache.ts
-// =================================================================================================
-
-import { Question } from "./Question";
-import { buildAllQuestions } from "./db";
-
-// The cache is stored in this private, module-level variable.
-let cachedQuestions: Question[] | null = null;
-
-/**
- * Retrieves all questions, using the cache if available.
- * If the cache is empty, it populates it by calling buildAllQuestions.
- */
-export async function getQuestions(): Promise<Question[]> {
-    if (cachedQuestions === null) {
-        console.log("CACHE MISS: Building questions from DB...");
-        cachedQuestions = await buildAllQuestions();
-    } else {
-        console.log("CACHE HIT: Returning cached questions.");
-    }
-    return cachedQuestions;
-}
-
-/**
- * Clears the cache. This should be called whenever the underlying data changes.
- */
-export function clearCache(): void {
-    console.log("CACHE CLEARED.");
-    cachedQuestions = null;
-}
-
-// =================================================================================================
 // FILE: src/sidepanelProvider.ts
 // =================================================================================================
 
@@ -1864,6 +2013,7 @@ import * as vscode from "vscode";
 import matter from "gray-matter";
 import markdownit from "markdown-it";
 import katex from "@vscode/markdown-it-katex";
+import { getSnippetById } from "./Cache.js";
 
 function getNonce() {
   let text = "";
@@ -1883,13 +2033,16 @@ export function getWebviewContent(
   const editor = vscode.window.activeTextEditor;
   const docUri = editor ? editor.document.uri : undefined;
 
+  const { content } = matter(text);
+  let resolvedContent = resolveReferences(content);
+  resolvedContent = unwrapSnippets(resolvedContent);
+
   const md = new markdownit({
     html: true,
     linkify: true,
     breaks: true,
   }).use(katex);
 
-  const { content } = matter(text);
 
   const defaultImageRenderer = md.renderer.rules.image!;
 
@@ -1921,7 +2074,7 @@ export function getWebviewContent(
     return defaultImageRenderer(tokens, idx, options, env, self);
   };
 
-  const html = md.render(content);
+  const html = md.render(resolvedContent);
 
   const katexCss = vscode.Uri.joinPath(
     context.extensionUri,
@@ -1975,6 +2128,16 @@ export function getWebviewContent(
             });
           });
         </script>
+        <style>
+          body {
+            font-size: 1.2em;
+          }
+          img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          }
+        </style>
     </head>
     <body>
         ${html}
@@ -1983,3 +2146,15 @@ export function getWebviewContent(
   `;
 }
 
+
+function resolveReferences(content: string): string {
+  return content.replace(/<ref id="(.+?)"\s*\/>/g, (match, id) => {
+    return getSnippetById(id) || `[Snippet '${id}' not found]`;
+  });
+}
+
+function unwrapSnippets(content: string): string {
+  return content.replace(/<snippet id="(.+?)">([\s\S]*?)<\/snippet>/g, (match, id, innerContent) => {
+    return innerContent;
+  });
+}
