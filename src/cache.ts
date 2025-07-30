@@ -1,6 +1,7 @@
 import { Question } from "./Question";
 import * as sqlite3 from "sqlite3";
 import * as path from "path";
+import * as vscode from "vscode";
 import { GET_QUESTIONS_SQL } from "./db_sql_queries";
 
 let questionsCache: Question[] | null = null;
@@ -32,7 +33,10 @@ export async function rebuildCache(): Promise<void> {
 
 
 async function buildQuestionsCache(): Promise<Question[]> {
-    const dbPath = path.resolve(__dirname, "../db.db");
+    const dbPath = path.join(
+        vscode.extensions.getExtension("Nicholas.vscode-cal")!.extensionPath,
+        "db.db"
+    );
     return new Promise((resolve, reject) => {
         const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
             if (err) {

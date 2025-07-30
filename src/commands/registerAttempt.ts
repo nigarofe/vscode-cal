@@ -35,7 +35,7 @@ export function registerAttemptCommand() {
             }
 
             await registerAttempt(questionNumber, attemptCode);
-            rebuildCache();
+            await rebuildCache();
         }
     );
 }

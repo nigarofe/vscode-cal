@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import { getWebviewContent } from "../webview";
+import { getQuestions } from "../cache";
 
 let panels: vscode.WebviewPanel[] = [];
 
 export function previewQuestionCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.previewQuestion",
-        () => {
+        async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 vscode.window.showInformationMessage("No active editor");
@@ -15,7 +16,22 @@ export function previewQuestionCommand(context: vscode.ExtensionContext) {
 
             const text = editor.document.getText();
             const questionNumberMatch = text.match(/^# Question (\d+)/im);
-            const questionNumber = questionNumberMatch ? questionNumberMatch[1] : " ";
+
+            if (!questionNumberMatch) {
+                vscode.window.showErrorMessage("Could not find question number in the current document");
+                return;
+            }
+
+            const questionNumber = parseInt(questionNumberMatch[1]);
+
+            // Get question from cache instead of using editor content
+            const questions = await getQuestions();
+            const question = questions.find(q => q.question_number === questionNumber);
+
+            if (!question) {
+                vscode.window.showErrorMessage(`Question number ${questionNumber} not found in cache`);
+                return;
+            }
 
             const roots = [
                 context.extensionUri,
@@ -44,8 +60,10 @@ export function previewQuestionCommand(context: vscode.ExtensionContext) {
                 context.subscriptions
             );
 
+            // Use cached question content instead of editor content
+            const cachedContent = question.generateContentFromQuestion();
             panel.webview.html = getWebviewContent(
-                editor.document.getText(),
+                cachedContent,
                 panel,
                 context
             );

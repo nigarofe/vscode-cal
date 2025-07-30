@@ -7,51 +7,74 @@ import { rebuildCache } from "../cache";
 
 export function createQuestionCommand(context: vscode.ExtensionContext) {
     const command = vscode.commands.registerCommand('vscode-cal.createQuestion', async () => {
-        const dbPath = path.join(context.extensionPath, "db.db");
-        const db = new sqlite3.Database(dbPath, (err) => {
-            if (err) {
-                vscode.window.showErrorMessage(`Error opening database: ${err.message}`);
-                return;
-            }
-        });
+        try {
+            const dbPath = path.join(context.extensionPath, "db.db");
 
-        db.get(GET_MAX_QUESTION_NUMBER_SQL, [], (err, row: { max_number: number }) => {
-            if (err) {
-                vscode.window.showErrorMessage(`Error getting max question number: ${err.message}`);
-                db.close();
-                return;
-            }
+            // Get max question number
+            const maxNumber = await new Promise<number>((resolve, reject) => {
+                const db = new sqlite3.Database(dbPath, (err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                });
 
-            const newQuestionNumber = (row.max_number || 0) + 1;
-
-            db.run(CREATE_QUESTION_SQL, ['', '', ``, '', '', '', ''], function (err) {
-                if (err) {
-                    vscode.window.showErrorMessage(`Error creating new question: ${err.message}`);
-                } else {
-                    const newQuestion = new Question({
-                        question_number: newQuestionNumber,
-                        discipline: '',
-                        source: '',
-                        description: '',
-                        proposition: '',
-                        step_by_step: '',
-                        answer: '',
-                        tags: '[]',
-                        code_vec_json: '[]',
-                        date_vec_json: '[]'
-                    });
-
-                    const fileContent = newQuestion.generateContentFromQuestion();
-
-                    vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' }).then(doc => {
-                        vscode.window.showTextDocument(doc);
-                        vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);
-                    });
-                    rebuildCache();
-                }
-                db.close();
+                db.get(GET_MAX_QUESTION_NUMBER_SQL, [], (err, row: { max_number: number }) => {
+                    if (err) {
+                        db.close();
+                        reject(err);
+                    } else {
+                        db.close();
+                        resolve(row?.max_number || 0);
+                    }
+                });
             });
-        });
+
+            const newQuestionNumber = maxNumber + 1;
+
+            // Create new question in database
+            await new Promise<void>((resolve, reject) => {
+                const db = new sqlite3.Database(dbPath, (err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                });
+
+                db.run(CREATE_QUESTION_SQL, ['', '', ``, '', '', '', ''], function (err) {
+                    db.close();
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+
+            // Create new question object and open in editor
+            const newQuestion = new Question({
+                question_number: newQuestionNumber,
+                discipline: '',
+                source: '',
+                description: '',
+                proposition: '',
+                step_by_step: '',
+                answer: '',
+                tags: '[]',
+                code_vec_json: '[]',
+                date_vec_json: '[]'
+            });
+
+            const fileContent = newQuestion.generateContentFromQuestion();
+
+            const doc = await vscode.workspace.openTextDocument({ content: fileContent, language: 'markdown' });
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);
+
+            await rebuildCache();
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Error creating question: ${error.message}`);
+        }
     });
 
     return command;

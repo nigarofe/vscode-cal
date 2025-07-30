@@ -29,7 +29,7 @@ export function saveQuestionCommand() {
                 return;
             }
             await saveQuestion(questionData);
-            rebuildCache();
+            await rebuildCache();
         }
     );
 }
