@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { getQuestions } from "../cache";
+import { getQuestions } from "../Cache";
 import { Question } from "../Question";
 
 export function recommendQuestionCommand(context: vscode.ExtensionContext) {

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import matter from "gray-matter";
 import markdownit from "markdown-it";
 import katex from "@vscode/markdown-it-katex";
-import { getSnippetById } from "./cache.js";
+import { getSnippetById } from "./Cache.js";
 
 function getNonce() {
   let text = "";

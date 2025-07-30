@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getQuestions } from "../cache";
+import { getQuestions } from "../Cache";
 import { Question } from "../Question";
 import * as path from "path";
 

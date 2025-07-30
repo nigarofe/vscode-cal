@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { getQuestions } from "../cache";
+import { getQuestions } from "../Cache";
 
 export function exportQuestionsJsonCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(

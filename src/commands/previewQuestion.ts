@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { getWebviewContent } from "../webview";
-import { getQuestions } from "../cache";
+import { getQuestions } from "../Cache";
 
 let panels: vscode.WebviewPanel[] = [];
 
