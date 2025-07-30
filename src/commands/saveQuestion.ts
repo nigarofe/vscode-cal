@@ -3,8 +3,9 @@ import { saveQuestion } from "../db";
 import { rebuildCache } from "../cache";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
 import { Question } from "../Question";
+import { updatePreviewPanels } from "./previewQuestion";
 
-export function saveQuestionCommand() {
+export function saveQuestionCommand(context: vscode.ExtensionContext) {
     return vscode.commands.registerCommand(
         "vscode-cal.saveQuestion",
         async () => {
@@ -30,6 +31,9 @@ export function saveQuestionCommand() {
             }
             await saveQuestion(questionData);
             await rebuildCache();
+
+            // Update preview panels with new cached data
+            await updatePreviewPanels(context);
         }
     );
 }

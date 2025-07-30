@@ -4,6 +4,7 @@ import * as path from "path";
 import { CREATE_QUESTION_SQL, GET_MAX_QUESTION_NUMBER_SQL } from "../db_sql_queries";
 import { Question } from "../Question";
 import { rebuildCache } from "../cache";
+import { updatePreviewPanels } from "./previewQuestion";
 
 export function createQuestionCommand(context: vscode.ExtensionContext) {
     const command = vscode.commands.registerCommand('vscode-cal.createQuestion', async () => {
@@ -72,6 +73,9 @@ export function createQuestionCommand(context: vscode.ExtensionContext) {
             vscode.window.showInformationMessage(`Created new question #${newQuestionNumber}. Fill in the details and save.`);
 
             await rebuildCache();
+
+            // Update preview panels with new cached data
+            await updatePreviewPanels(context);
         } catch (error: any) {
             vscode.window.showErrorMessage(`Error creating question: ${error.message}`);
         }

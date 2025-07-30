@@ -74,3 +74,28 @@ export function previewQuestionCommand(context: vscode.ExtensionContext) {
 export function getPanels() {
     return panels;
 }
+
+export async function updatePreviewPanels(context: vscode.ExtensionContext) {
+    const questions = await getQuestions();
+
+    panels.forEach((panel) => {
+        if (panel.visible) {
+            // Extract question number from panel title
+            const titleMatch = panel.title.match(/Preview Q(\d+)/);
+            if (titleMatch) {
+                const questionNumber = parseInt(titleMatch[1]);
+                const question = questions.find(q => q.question_number === questionNumber);
+
+                if (question) {
+                    // Use cached question content to update the panel
+                    const cachedContent = question.generateContentFromQuestion();
+                    panel.webview.html = getWebviewContent(
+                        cachedContent,
+                        panel,
+                        context
+                    );
+                }
+            }
+        }
+    });
+}

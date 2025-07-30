@@ -14,7 +14,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(exportQuestionsJsonCommand(context));
     context.subscriptions.push(openQuestionByNumberCommand());
     context.subscriptions.push(previewQuestionCommand(context));
-    context.subscriptions.push(saveQuestionCommand());
+    context.subscriptions.push(saveQuestionCommand(context));
     context.subscriptions.push(registerAttemptCommand());
     context.subscriptions.push(recommendQuestionCommand(context));
     context.subscriptions.push(showRankedQuestionsCommand(context));
