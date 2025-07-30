@@ -5,7 +5,6 @@
 
 ## **(Ubiquitous)**
 * The system shall store premises in a dedicated premises table with an id, name, and content.
-* The system shall store snippets defined within premises in a dedicated snippets table.
 
 ## **(State driven)**
 * While the application is rendering content that includes a <ref>, the system shall query the snippets table to find the corresponding content.
