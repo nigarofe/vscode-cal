@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { saveQuestion } from "../db";
-import { clearCache } from "../questionCache";
+import { rebuildCache } from "../cache";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
 import { Question } from "../Question";
 
@@ -29,7 +29,7 @@ export function saveQuestionCommand() {
                 return;
             }
             await saveQuestion(questionData);
-            clearCache();
+            rebuildCache();
         }
     );
 }

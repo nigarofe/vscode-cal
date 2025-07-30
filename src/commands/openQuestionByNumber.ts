@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { updateDiagnostics } from "../diagnostics";
-import { getQuestions } from "../questionCache";
+import { getQuestions } from "../cache";
 
 export function openQuestionByNumberCommand() {
     return vscode.commands.registerCommand(

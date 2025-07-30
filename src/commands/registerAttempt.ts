@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { registerAttempt } from "../db";
-import { clearCache } from "../questionCache";
+import { rebuildCache } from "../cache";
 
 export function registerAttemptCommand() {
     return vscode.commands.registerCommand(
@@ -35,7 +35,7 @@ export function registerAttemptCommand() {
             }
 
             await registerAttempt(questionNumber, attemptCode);
-            clearCache();
+            rebuildCache();
         }
     );
 }
