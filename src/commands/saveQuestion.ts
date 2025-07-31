@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { saveQuestion } from "../db";
-import { rebuildCache } from "../Cache";
+import { rebuildCache } from "../cache";
 import { diagnosticsCollection, updateDiagnostics } from "../diagnostics";
 import { Question } from "../Question";
 import { updatePreviewPanels } from "./previewQuestion";

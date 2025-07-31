@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { registerAttempt } from "../db";
-import { rebuildCache } from "../Cache";
+import { rebuildCache } from "../cache";
 
 export function registerAttemptCommand() {
     return vscode.commands.registerCommand(

@@ -1,0 +1,90 @@
+[33mcb8ddc8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m updated 7_premises
+[33m5f6e587[m todo ready for implementing 7_premises.md
+[33m2bf400b[m updated requirements
+[33mb7bf15e[m deleted outdated migration prompt
+[33med0b510[m 7_premises.md and 8_curated_views.md
+[33m2c69937[m merge_requirements
+[33ma22c20b[m snippets requirements
+[33m1b26bfe[m update requirements files
+[33mfe7e836[m typo
+[33mf13073c[m rearranged requirements folder
+[33m1f87168[m better looking sidepanel
+[33m87d411e[m class Cache
+[33m7410470[m updatePreviewPanels()
+[33m6a255c9[m getDbPath()
+[33m9031c34[m updated cache logic
+[33m22ddbba[m moved databse from src to root
+[33md5eb7fd[m first of the day
+[33m5cf0926[m webview styling
+[33m68e0999[m not breaking lines inside snippet tag bugfix
+[33m2dd6092[m working snippet in real time
+[33m247ce38[m using questionCache
+[33m430b106[m snippetCache
+[33m430f28d[m question cache
+[33md5f74eb[m Revert "simple snippets working"
+[33md6211b2[m simple snippets working
+[33m7e5a0e7[m minor
+[33m2373d17[m createQuestion redundancy
+[33m37b7868[m working refactoring
+[33me146de5[m intermediate
+[33m35f0b46[m deleted content provider as it is read only and I didn't know
+[33m9d1577a[m question.generateContentFromQuestion();
+[33m1da4bda[m QuestionContentProvider
+[33mcef33f9[m minor removals
+[33m68117c4[m refactored openQuestionByNumber
+[33m152e752[m removed tests
+[33mae265a4[m line breaks
+[33m4a034e6[m create question command and button
+[33m2c0d8b5[m code formatting
+[33m20a2617[m number before text on sorting order
+[33mc66b4c6[m colors follow table sorting
+[33me3426c2[m table sorting
+[33m71ded10[m correct ranking and row colors
+[33me702c5e[m button on sidepanel
+[33mb02fbd3[m clickable rows in show ranked questions
+[33ma256659[m bug if (codeVec.length === 1 && codeVec[0] === null) {
+[33macbe0ff[m recommend question button
+[33m338d57a[m rename to commands loader
+[33m49a40e0[m import { registerCommands } from "./commands/index"; bugfix
+[33m327162e[m import { saveQuestion } from "../db";
+[33m0a470a6[m merged register attempt commands
+[33m36b6839[m refactor commands into individual files
+[33m3c6a94b[m rename
+[33mf0fdb8c[m sidepanel.html
+[33mef50f58[m open question with button
+[33m1ab6414[m question-management.test.ts
+[33mf7f3acf[m question-management/requirements.md
+[33m3d7ed89[m update 2 readme
+[33m89ad09b[m readme update
+[33m4bd9de8[m requirements update
+[33m8050e3d[m EARS
+[33ma4542d5[m features readme
+[33m95c4496[m features files filling
+[33mcd094d7[m merge scripts
+[33mdedcf5d[m .feature files
+[33m6ea30fc[m gerkin experiment
+[33m2f7bdcf[m readme
+[33m18c196c[m bugfix
+[33m9edf4d5[m removed unnecessary imports and code comments
+[33m768ff1b[m workspace
+[33m52fc295[m referencing system concept
+[33m9459217[m merge_ts_files make empty first
+[33mcc689a6[m working image render
+[33m1660a5d[m css bugfix
+[33m44e237e[m working attempt buttons
+[33mf5905a8[m button styling
+[33mfcc43bc[m save to db button on sidepanel
+[33me9bf30e[m regex improvement
+[33m41c1f5f[m multiple questions previews
+[33me6f414e[m extension sidepanel
+[33m8e2d96f[m const content fixes
+[33m73a54f3[m minor code fixes
+[33m8a8b593[m code refactor
+[33m2019b05[m correct folder output
+[33me440e83[m rotate_keys.js
+[33m5158496[m working question preview
+[33m1728460[m previewQuestionCommand
+[33m0b4835a[m updateDiagnostics
+[33m23f0206[m correct json export
+[33md428976[m showAllQuestionsJsonCommand
+[33m8d3c038[m initial commit
