@@ -1,0 +1,114 @@
+{
+  "rubricTitle": "Analytical Rubric for Topic Recall",
+  "rubricDescription": "A rubric to evaluate the quality of responses to the question 'What do you remember about this topic?', focusing on the depth, accuracy, organization, and clarity of the recalled information.",
+  "criteria": [
+    {
+      "criterionId": "depth_recall",
+      "criterionName": "Depth and Detail of Recall",
+      "weight": 0.3,
+      "levels": [
+        {
+          "score": 4,
+          "descriptor": "Excellent",
+          "description": "Recalls a rich and comprehensive range of information, including major concepts, specific details, and relevant examples. Demonstrates a deep and nuanced memory of the topic."
+        },
+        {
+          "score": 3,
+          "descriptor": "Proficient",
+          "description": "Recalls the main ideas and several important supporting details accurately. The core elements of the topic are well-remembered."
+        },
+        {
+          "score": 2,
+          "descriptor": "Developing",
+          "description": "Recalls some general information or a few key points but misses significant details. Shows a surface-level or partial memory of the topic."
+        },
+        {
+          "score": 1,
+          "descriptor": "Needs Improvement",
+          "description": "Recalls very little information, or the information is vague and generic. Fails to demonstrate a meaningful memory of the topic."
+        }
+      ]
+    },
+    {
+      "criterionId": "accuracy_info",
+      "criterionName": "Accuracy of Information",
+      "weight": 0.3,
+      "levels": [
+        {
+          "score": 4,
+          "descriptor": "Excellent",
+          "description": "All recalled information is accurate and factually correct. Shows a precise understanding of the topic without misconceptions."
+        },
+        {
+          "score": 3,
+          "descriptor": "Proficient",
+          "description": "The vast majority of recalled information is accurate, with only minor or insignificant errors."
+        },
+        {
+          "score": 2,
+          "descriptor": "Developing",
+          "description": "Contains a mix of accurate and inaccurate information. Shows some significant misunderstandings or factual errors."
+        },
+        {
+          "score": 1,
+          "descriptor": "Needs Improvement",
+          "description": "The recalled information is largely or entirely inaccurate. Demonstrates a fundamental misunderstanding of the topic."
+        }
+      ]
+    },
+    {
+      "criterionId": "organization_coherence",
+      "criterionName": "Organization and Coherence",
+      "weight": 0.2,
+      "levels": [
+        {
+          "score": 4,
+          "descriptor": "Excellent",
+          "description": "Presents remembered information in a highly organized and logical manner. Ideas are connected coherently, making the response easy to follow."
+        },
+        {
+          "score": 3,
+          "descriptor": "Proficient",
+          "description": "Presents information in a mostly organized way. Connections between ideas are generally clear, though there may be minor lapses in structure."
+        },
+        {
+          "score": 2,
+          "descriptor": "Developing",
+          "description": "Presents information in a somewhat disorganized or rambling manner. The connections between ideas are often unclear or illogical."
+        },
+        {
+          "score": 1,
+          "descriptor": "Needs Improvement",
+          "description": "The response is disorganized and lacks a clear structure. It is difficult to follow the train of thought."
+        }
+      ]
+    },
+    {
+      "criterionId": "clarity_expression",
+      "criterionName": "Clarity of Expression",
+      "weight": 0.2,
+      "levels": [
+        {
+          "score": 4,
+          "descriptor": "Excellent",
+          "description": "Articulates memories using precise, clear, and effective language. The vocabulary is appropriate for the topic."
+        },
+        {
+          "score": 3,
+          "descriptor": "Proficient",
+          "description": "Expresses memories clearly for the most part. The language is generally effective, though it may lack precision at times."
+        },
+        {
+          "score": 2,
+          "descriptor": "Developing",
+          "description": "Expression is sometimes unclear or ambiguous. The language used may be vague or imprecise, hindering understanding."
+        },
+        {
+          "score": 1,
+          "descriptor": "Needs Improvement",
+          "description": "Expression is confusing and difficult to understand. The language is inappropriate or used incorrectly."
+        }
+      ]
+    }
+  ]
+}
